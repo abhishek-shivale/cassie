@@ -48,4 +48,8 @@ pub mod cassie {
         )
     }
     
+    pub fn update_council(ctx: Context<UpdateCouncil>, old: Pubkey, new: Pubkey) -> Result<()> {
+        ctx.accounts.update_council(old, new)
+    }
+    
 }
