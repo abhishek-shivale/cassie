@@ -1,5 +1,5 @@
 use crate::constants::ADMIN_CONFIG_SEED;
-use crate::state::admin::AdminConfig;
+use crate::state::admin::OracleConfig;
 use crate::error::CassieError;
 use anchor_lang::prelude::*;
 
@@ -13,7 +13,7 @@ pub struct UpdateConfig<'info> {
         bump = config.bump,
         has_one = authority @ CassieError::UnauthorizedAdmin,
     )]
-    pub config: Account<'info, AdminConfig>,
+    pub config: Account<'info, OracleConfig>,
 }
 
 impl<'info> UpdateConfig<'info> {
@@ -22,14 +22,12 @@ impl<'info> UpdateConfig<'info> {
         default_answer_period: u16,
         default_council_resolve_period: u16,
         default_dispute_period: u16,
-        max_council_members: u8,
         slash_rate: u16,
     ) -> Result<()> {
        let cfg = &mut self.config;
         cfg.default_answer_period = default_answer_period;
         cfg.default_council_resolve_period = default_council_resolve_period;
         cfg.default_dispute_period = default_dispute_period;
-        cfg.max_council_members = max_council_members;
         cfg.slash_rate = slash_rate;
         Ok(())
     }

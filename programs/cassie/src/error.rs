@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum CassieError {
+    #[msg("Duplicate council member.")]
+    DuplicateCouncilMember,
     #[msg("Question already exists.")]
     QuestionAlreadyExists,
     #[msg("Answer window closed.")]
@@ -31,5 +33,5 @@ pub enum CassieError {
     #[msg("Callback invocation failed.")]
     CallbackInvocationFailed,
     #[msg("unauthorized admin.")]
-    UnauthorizedAdmin
+    UnauthorizedAdmin,
 }

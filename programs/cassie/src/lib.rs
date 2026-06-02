@@ -20,16 +20,16 @@ pub mod cassie {
         default_answer_period: u16,
         default_council_resolve_period: u16,
         default_dispute_period: u16,
-        max_council_members: u8,
         slash_rate: u16,
+        council: [Pubkey; 3],
     ) -> Result<()> {
         ctx.accounts.init_config(
             ctx.bumps.config,
             default_answer_period,
             default_council_resolve_period,
             default_dispute_period,
-            max_council_members,
             slash_rate,
+            council,
         )
     }
 
@@ -38,15 +38,14 @@ pub mod cassie {
         default_answer_period: u16,
         default_council_resolve_period: u16,
         default_dispute_period: u16,
-        max_council_members: u8,
         slash_rate: u16,
     ) -> Result<()> {
         ctx.accounts.update_config(
             default_answer_period,
             default_council_resolve_period,
             default_dispute_period,
-            max_council_members,
             slash_rate,
         )
     }
+    
 }
