@@ -8,3 +8,8 @@ test-ledger
 .surfpool
 .idea
 **/**/.idea
+
+# Next.js frontend (app/)
+.next
+next-env.d.ts
+out

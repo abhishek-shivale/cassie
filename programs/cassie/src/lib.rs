@@ -15,7 +15,4 @@ declare_id!("5sU2QBvow11aj1m6z6DdqpsaqVuh84e8RWpQD5njdgYM");
 pub mod cassie {
     use super::*;
 
-    // pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-    //     initialize::handler(ctx)
-    // }
 }
