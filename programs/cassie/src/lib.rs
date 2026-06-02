@@ -6,7 +6,7 @@ pub mod state;
 use anchor_lang::prelude::*;
 
 pub use constants::*;
-pub use instructions::admin::*;
+pub use instructions::*;
 pub use state::*;
 
 declare_id!("5sU2QBvow11aj1m6z6DdqpsaqVuh84e8RWpQD5njdgYM");
@@ -47,9 +47,28 @@ pub mod cassie {
             slash_rate,
         )
     }
-    
+
     pub fn update_council(ctx: Context<UpdateCouncil>, old: Pubkey, new: Pubkey) -> Result<()> {
         ctx.accounts.update_council(old, new)
     }
-    
+
+    pub fn ask(
+        ctx: Context<Ask>,
+        nonce: u64,
+        question: String,
+        bounty: u64,
+        category: String,
+        description: String,
+        rules: String,
+    ) -> Result<()> {
+        ctx.accounts.ask_question(
+            question,
+            nonce,
+            ctx.bumps.question,
+            bounty,
+            category,
+            description,
+            rules,
+        )
+    }
 }

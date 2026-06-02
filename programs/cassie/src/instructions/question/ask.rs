@@ -1,9 +1,7 @@
-use std::time::SystemTime;
-use crate::constants::{ADMIN_CONFIG_SEED, USDC_PUBKEY, QUESTION_CONFIG_SEED};
+use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
 use crate::state::admin::OracleConfig;
 use crate::state::question::QuestionConfig;
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::clock::UnixTimestamp;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
@@ -11,7 +9,7 @@ use anchor_spl::{
 
 #[derive(Accounts)]
 #[instruction(nonce: u64)]
-pub struct Question<'info> {
+pub struct Ask<'info> {
     #[account(mut)]
     pub questioner: Signer<'info>,
 
@@ -52,17 +50,36 @@ pub struct Question<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
-impl<'info> Question<'info> {
-    pub fn deposit_bounty(&mut self, bounty: u64) -> Result<()>{
-        let signer_seeds: &[&[&[u8]]] = &[&[
-
-        ]];
+impl<'info> Ask<'info> {
+    pub fn deposit_bounty(&mut self, bounty: u64) -> Result<()> {
+        // require_gt!(self.config.) !todo
+        transfer_checked(
+            CpiContext::new(
+                self.token_program.key(),
+                TransferChecked {
+                    from: self.questioner_ata.to_account_info(),
+                    to: self.bounty_ata.to_account_info(),
+                    mint: self.usdc_mint.to_account_info(),
+                    authority: self.questioner.to_account_info(),
+                },
+            ),
+            bounty,
+            self.usdc_mint.decimals,
+        )?;
         Ok(())
     }
 
-    pub fn ask_question(&mut self, question: String, nonce: u64, bump: u8, bounty: u64, ) -> Result<()> {
-       let created_at = ; 
+    pub fn ask_question(
+        &mut self,
+        question: String,
+        nonce: u64,
+        bump: u8,
+        bounty: u64,
+        category: String,
+        description: String,
+        rules: String,
+    ) -> Result<()> {
+        let created_at = Clock::get()?.unix_timestamp;
         self.question.set_inner(QuestionConfig {
             questioner: self.questioner.key(),
             question,
@@ -72,8 +89,26 @@ impl<'info> Question<'info> {
             category,
             description,
             rules,
-            created_at: ,
+            created_at,
         });
+        // emit here !todo
+        Ok(())
+    }
+
+    pub fn handler(
+        &mut self,
+        question: String,
+        nonce: u64,
+        bump: u8,
+        bounty: u64,
+        category: String,
+        description: String,
+        rules: String,
+    ) -> Result<()> {
+        self.ask_question(question, nonce, bump, bounty, category, description, rules)?;
+
+        self.deposit_bounty(bounty)?;
+
         Ok(())
     }
 }
