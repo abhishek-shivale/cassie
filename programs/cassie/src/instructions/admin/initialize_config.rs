@@ -11,7 +11,7 @@ pub struct InitializeConfig<'info> {
         init_if_needed,
         payer = authority,
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
-        space= 8 + OracleConfig::INIT_SPACE,
+        space= OracleConfig::DISCRIMINATOR.len() + OracleConfig::INIT_SPACE,
         bump,
     )]
     pub config: Account<'info, OracleConfig>,
