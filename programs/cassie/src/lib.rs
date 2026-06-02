@@ -5,8 +5,8 @@ pub mod state;
 
 use anchor_lang::prelude::*;
 
-pub use instructions::admin::*;
 pub use constants::*;
+pub use instructions::admin::*;
 pub use state::*;
 
 declare_id!("5sU2QBvow11aj1m6z6DdqpsaqVuh84e8RWpQD5njdgYM");
@@ -25,6 +25,23 @@ pub mod cassie {
     ) -> Result<()> {
         ctx.accounts.init_config(
             ctx.bumps.config,
+            default_answer_period,
+            default_council_resolve_period,
+            default_dispute_period,
+            max_council_members,
+            slash_rate,
+        )
+    }
+
+    pub fn update_config(
+        ctx: Context<UpdateConfig>,
+        default_answer_period: u16,
+        default_council_resolve_period: u16,
+        default_dispute_period: u16,
+        max_council_members: u8,
+        slash_rate: u16,
+    ) -> Result<()> {
+        ctx.accounts.update_config(
             default_answer_period,
             default_council_resolve_period,
             default_dispute_period,
