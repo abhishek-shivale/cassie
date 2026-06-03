@@ -50,6 +50,7 @@ pub struct Ask<'info> {
     pub system_program: Program<'info, System>,
 }
 
+
 impl<'info> Ask<'info> {
     pub fn deposit_bounty(&mut self, bounty: u64) -> Result<()> {
         // require_gt!(self.config.) !todo
