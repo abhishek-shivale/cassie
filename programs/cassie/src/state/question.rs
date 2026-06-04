@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 pub struct Question {
     // creator = who creates the question
     pub creator: Pubkey,
-    // hash = the is unique to the on
+    // hash = the is unique to the on-chain id 
     pub hash: [u8; 32],
     // metadata_uri = arweave/ipfs
     pub metadata_uri : [u8; 128],
