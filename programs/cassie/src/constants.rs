@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+pub const MAX_COUNCIL_MEMBER: usize = 9;
+
 #[constant]
 pub const ADMIN_CONFIG_SEED: &str = "admin_config";
 
