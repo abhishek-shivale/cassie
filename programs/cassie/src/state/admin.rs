@@ -15,6 +15,9 @@ pub struct OracleConfig  {
     pub default_answer_window: u64,
     // Default seconds to dispute the answer
     pub default_dispute_window: u64,
+    // pub default council window
+    pub default_council_window: u64,
+
 
     // minimum stack to answer the question
     pub min_stake: u64,
