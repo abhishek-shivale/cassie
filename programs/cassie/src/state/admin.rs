@@ -1,15 +1,43 @@
 use anchor_lang::prelude::*;
+use crate::MAX_COUNCIL_MEMBER;
 
 #[account]
 #[derive(InitSpace)]
 pub struct OracleConfig  {
-    pub bump: u8,
-    pub authority: Pubkey,
-    pub usdc_mint: Pubkey,
-    pub slash_rate: u16, // 50 percent
-    pub default_dispute_period: u16, // in sec
-    pub default_answer_period: u16,
-    pub default_council_resolve_period: u16,
-    pub council: [Pubkey; 3],
+    // admin authority
+    pub admin: Pubkey,
+    // SPL but usdc for now
+    pub bond_mint: Pubkey,
+    // Treasury
+    pub treasury: Pubkey,
+
+    // Default seconds to answer the question
+    pub default_answer_window: u64,
+    // Default seconds to dispute the answer
+    pub default_dispute_window: u64,
+    // pub default council window
+    pub default_council_window: u64,
+
+
+    // minimum stack to answer the question
+    pub min_stake: u64,
+    // minimum bounty question must put
+    pub min_bounty: u64,
+    // minimum dispute bond
+    pub min_dispute_bond: u64,
+    // divergence bps = the percent if no comes it will auto-escalate to council. example - 3500  = 35 percent
+    pub divergence_bps: u64,
+    // slash bps = slash percentage e.g. 5000 = 50%
+    pub slash_bps: u64,
+    // treasury_bps = protocol fee e.g. 10 = 0.1% of reward pool
+    pub treasury_bps: u64,
+
+    // council
+    pub council: [Pubkey; MAX_COUNCIL_MEMBER],
+    // max council size.
+    pub council_size: u8,
+    // quorum = minimum vote require by council member to settle the question
     pub quorum: u8,
+
+    pub bump: u8, // bump of the pda so we don't have to derive everytime
 }
