@@ -1,10 +1,15 @@
 pub mod admin;
 pub mod question;
-mod answer;
-mod outcome;
-mod reputation;
-mod dispute;
-mod council;
+pub mod answer;
+pub mod outcome;
+pub mod reputation;
+pub mod dispute;
+pub mod council;
 
 pub use admin::*;
 pub use question::*;
+pub use answer::*;
+pub use outcome::*;
+pub use reputation::*;
+pub use dispute::*;
+pub use council::*;

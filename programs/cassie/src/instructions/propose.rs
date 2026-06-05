@@ -1,5 +1,5 @@
 use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
-use crate::{OracleConfig, QuestionConfig};
+use crate::{OracleConfig, Question};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{
@@ -17,7 +17,7 @@ pub struct Propose<'info> {
          seeds = [QUESTION_CONFIG_SEED.as_ref(), asker.key().as_ref(), nonce.to_le_bytes().as_ref()],
         bump = question.bump
     )]
-    pub question: Account<'info, QuestionConfig>,
+    pub question: Account<'info, Question>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_ref()],

@@ -1,23 +1,23 @@
-use anchor_lang::prelude::*;
 use crate::MAX_COUNCIL_MEMBER;
+use anchor_lang::prelude::clock::UnixTimestamp;
+use anchor_lang::prelude::*;
 
 #[account]
 #[derive(InitSpace)]
-pub struct OracleConfig  {
+pub struct OracleConfig {
     // admin authority
     pub admin: Pubkey,
     // SPL but usdc for now
-    pub bond_mint: Pubkey,
+    pub mint: Pubkey,
     // Treasury
     pub treasury: Pubkey,
 
-    // Default seconds to answer the question
-    pub default_answer_window: u64,
-    // Default seconds to dispute the answer
-    pub default_dispute_window: u64,
-    // pub default council window
-    pub default_council_window: u64,
-
+    // Default seconds to answer the question e.g. store in second - 2h = 60*60*2
+    pub default_answer_window: i64,
+    // Default seconds to dispute the answer e.g. store in second - 2h = 60*60*2
+    pub default_dispute_window: i64,
+    // pub default council window e.g. store in second - 2h = 60*60*2
+    pub default_council_window: i64,
 
     // minimum stack to answer the question
     pub min_stake: u64,
@@ -40,4 +40,19 @@ pub struct OracleConfig  {
     pub quorum: u8,
 
     pub bump: u8, // bump of the pda so we don't have to derive everytime
+}
+
+impl OracleConfig {
+    pub fn get_question_deadline(&self, created_at: UnixTimestamp) -> i64 {
+        created_at + self.default_answer_window
+    }
+
+    pub fn get_dispute_deadline(&self, disputed_at: UnixTimestamp) -> i64 {
+        disputed_at + self.default_dispute_window
+    }
+    
+    pub fn get_council_deadline(&self, council_at: UnixTimestamp) -> i64 {
+        council_at + self.default_council_window
+    }
+
 }
