@@ -1,6 +1,7 @@
 use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
 use crate::state::admin::OracleConfig;
-use crate::state::question::QuestionConfig;
+use crate::state::question::Question;
+use crate::CreateQuestion;
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -8,7 +9,7 @@ use anchor_spl::{
 };
 
 #[derive(Accounts)]
-#[instruction(nonce: u64)]
+#[instruction(hash: [u8; 32])]
 pub struct Ask<'info> {
     #[account(mut)]
     pub questioner: Signer<'info>,
@@ -22,11 +23,11 @@ pub struct Ask<'info> {
     #[account(
         init,
         payer = questioner,
-        space = QuestionConfig::DISCRIMINATOR.len() + QuestionConfig::INIT_SPACE,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), questioner.key().as_ref(), nonce.to_le_bytes().as_ref()],
+        space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
+        seeds = [QUESTION_CONFIG_SEED.as_ref(), questioner.key().as_ref(), hash.as_ref()],
         bump
     )]
-    pub question: Account<'info, QuestionConfig>,
+    pub question: Account<'info, Question>,
 
     #[account(
         address = USDC_PUBKEY
@@ -50,10 +51,9 @@ pub struct Ask<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 impl<'info> Ask<'info> {
     pub fn deposit_bounty(&mut self, bounty: u64) -> Result<()> {
-        // require_gt!(self.config.) !todo
+        require_gt!(self.config.min_bounty, bounty);
         transfer_checked(
             CpiContext::new(
                 self.token_program.key(),
@@ -72,44 +72,44 @@ impl<'info> Ask<'info> {
 
     pub fn ask_question(
         &mut self,
-        question: String,
-        nonce: u64,
+        hash: [u8; 32],
         bump: u8,
         bounty: u64,
-        category: String,
-        description: String,
-        rules: String,
+        category: u8,
+        metadata_uri: [u8; 128],
+        callback_program: Pubkey,
+        callback_discriminator: [u8; 8],
     ) -> Result<()> {
         let created_at = Clock::get()?.unix_timestamp;
-        self.question.set_inner(QuestionConfig {
-            questioner: self.questioner.key(),
-            question,
-            nonce,
+        let answer_deadline = self.config.get_question_deadline(created_at);
+        self.question.set_inner(Question {
+            creator: self.questioner.key(),
+            total_yes_weight: 0,
+            total_no_weight: 0,
+            total_yes_stake: 0,
+            total_no_stake: 0,
+            has_dispute: false,
+            escalated: false,
+            dispute_deadline: 0,
             bump,
             bounty,
+            answer_deadline,
             category,
-            description,
-            rules,
             created_at,
+            hash,
+            metadata_uri,
+            callback_program,
+            callback_discriminator,
         });
-        // emit here !todo
-        Ok(())
-    }
-
-    pub fn handler(
-        &mut self,
-        question: String,
-        nonce: u64,
-        bump: u8,
-        bounty: u64,
-        category: String,
-        description: String,
-        rules: String,
-    ) -> Result<()> {
-        self.ask_question(question, nonce, bump, bounty, category, description, rules)?;
 
         self.deposit_bounty(bounty)?;
 
+        emit!(CreateQuestion {
+            creator: self.questioner.key(),
+            hash,
+            metadata_uri,
+            bounty,
+        });
         Ok(())
     }
 }

@@ -1,5 +1,10 @@
 use anchor_lang::prelude::*;
 
+
+//  ----------------------------------------------------
+//  |                 Errors                           |
+//  ---------------------------------------------------- 
+//  this is error enum use across protocol.
 #[error_code]
 pub enum CassieError {
     #[msg("Duplicate council member.")]

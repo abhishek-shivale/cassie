@@ -6,12 +6,12 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct UpdateCouncil<'info> {
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub admin: Signer<'info>,
     #[account(
         mut,
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
         bump = config.bump,
-        has_one = authority @ CassieError::UnauthorizedAdmin,
+        has_one = admin @ CassieError::UnauthorizedAdmin,
     )]
     pub config: Account<'info, OracleConfig>,
 }

@@ -39,7 +39,7 @@ pub struct Question {
     pub escalated: bool,
 
     // consumer callback - set when ask question default None
-    pub callback_program: Option<Pubkey>,
+    pub callback_program: Pubkey,
     // callback discriminator
     pub callback_discriminator: [u8; 8],
 

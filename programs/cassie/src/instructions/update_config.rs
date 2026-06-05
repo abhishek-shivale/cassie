@@ -6,12 +6,12 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct UpdateConfig<'info> {
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub admin: Signer<'info>,
     #[account(
         mut,
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
         bump = config.bump,
-        has_one = authority @ CassieError::UnauthorizedAdmin,
+        has_one = admin @ CassieError::UnauthorizedAdmin,
     )]
     pub config: Account<'info, OracleConfig>,
 }
@@ -19,16 +19,14 @@ pub struct UpdateConfig<'info> {
 impl<'info> UpdateConfig<'info> {
     pub fn update_config(
         &mut self,
-        default_answer_period: u16,
-        default_council_resolve_period: u16,
-        default_dispute_period: u16,
-        slash_rate: u16,
+        default_dispute_window: i64,
+        default_council_window: i64,
+        default_dispute_period: i64,
     ) -> Result<()> {
        let cfg = &mut self.config;
-        cfg.default_answer_period = default_answer_period;
-        cfg.default_council_resolve_period = default_council_resolve_period;
-        cfg.default_dispute_period = default_dispute_period;
-        cfg.slash_rate = slash_rate;
+        cfg.default_dispute_window = default_dispute_window;
+        cfg.default_council_window = default_council_window;
+        cfg.default_answer_window = default_dispute_period;
         Ok(())
     }
 }

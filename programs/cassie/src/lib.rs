@@ -1,11 +1,13 @@
 pub mod constants;
 pub mod error;
+pub mod events;
 pub mod instructions;
 pub mod state;
 
 use anchor_lang::prelude::*;
 
 pub use constants::*;
+pub use events::*;
 pub use instructions::*;
 pub use state::*;
 
@@ -17,34 +19,44 @@ pub mod cassie {
 
     pub fn initialize_config(
         ctx: Context<InitializeConfig>,
-        default_answer_period: u16,
-        default_council_resolve_period: u16,
-        default_dispute_period: u16,
-        slash_rate: u16,
-        council: [Pubkey; 3],
+        default_answer_window: i64,
+        default_council_window: i64,
+        default_dispute_window: i64,
+        divergence_bps: u64,
+        min_bounty: u64,
+        min_dispute_bond: u64,
+        slash_bps: u64,
+        treasury: Pubkey,
+        treasury_bps: u64,
+        min_stake: u64,
+        council: [Pubkey; 9],
     ) -> Result<()> {
         ctx.accounts.init_config(
             ctx.bumps.config,
-            default_answer_period,
-            default_council_resolve_period,
-            default_dispute_period,
-            slash_rate,
+            default_answer_window,
+            default_council_window,
+            default_dispute_window,
+            divergence_bps,
+            min_bounty,
+            min_dispute_bond,
+            slash_bps,
+            treasury,
+            treasury_bps,
+            min_stake,
             council,
         )
     }
 
     pub fn update_config(
         ctx: Context<UpdateConfig>,
-        default_answer_period: u16,
-        default_council_resolve_period: u16,
-        default_dispute_period: u16,
-        slash_rate: u16,
+        default_dispute_window: i64,
+        default_council_window: i64,
+        default_dispute_period: i64,
     ) -> Result<()> {
         ctx.accounts.update_config(
-            default_answer_period,
-            default_council_resolve_period,
+            default_dispute_window,
+            default_council_window,
             default_dispute_period,
-            slash_rate,
         )
     }
 
@@ -54,25 +66,25 @@ pub mod cassie {
 
     pub fn ask(
         ctx: Context<Ask>,
-        nonce: u64,
-        question: String,
+        hash: [u8; 32],
         bounty: u64,
-        category: String,
-        description: String,
-        rules: String,
+        category: u8,
+        metadata_uri: [u8; 128],
+        callback_program: Pubkey,
+        callback_discriminator: [u8; 8],
     ) -> Result<()> {
         ctx.accounts.ask_question(
-            question,
-            nonce,
+            hash,
             ctx.bumps.question,
             bounty,
             category,
-            description,
-            rules,
+            metadata_uri,
+            callback_program,
+            callback_discriminator,
         )
     }
-    
+
     // pub fn answer(ctx: Context<Answer>) -> Result<()> {
-    //     
+    //
     // }
 }
