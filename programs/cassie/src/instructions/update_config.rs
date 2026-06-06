@@ -1,6 +1,6 @@
 use crate::constants::ADMIN_CONFIG_SEED;
-use crate::state::admin::OracleConfig;
 use crate::error::CassieError;
+use crate::state::admin::OracleConfig;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -22,14 +22,26 @@ impl<'info> UpdateConfig<'info> {
         default_dispute_window: Option<i64>,
         default_council_window: Option<i64>,
         default_answer_window: Option<i64>,
-        freeze: Option<bool>
+        freeze: Option<bool>,
     ) -> Result<()> {
-       let cfg = &mut self.config;
-        if let Some(v) = default_dispute_window { cfg.default_dispute_window = v; }
-        if let Some(v) = default_council_window { cfg.default_council_window = v; }
-        if let Some(v) = default_answer_window { cfg.default_answer_window = v; }
-        if let Some(f) = freeze { cfg.freeze = f; }
-        
+        let cfg = &mut self.config;
+        // its window check all in seconds
+        if let Some(v) = default_dispute_window {
+            require_gte!(v, 7200, CassieError::InvalidWindow);
+            cfg.default_dispute_window = v;
+        }
+        if let Some(v) = default_council_window {
+            require_gte!(v, 86400, CassieError::InvalidWindow);
+            cfg.default_council_window = v;
+        }
+        if let Some(v) = default_answer_window {
+            require_gte!(v, 3600, CassieError::InvalidWindow);
+            cfg.default_answer_window = v;
+        }
+        if let Some(f) = freeze {
+            cfg.freeze = f;
+        }
+
         Ok(())
     }
 }

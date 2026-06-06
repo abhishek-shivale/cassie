@@ -30,10 +30,9 @@ pub struct Outcome {
     pub bump: u8,
 }
 
-
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub enum Resolver {
     Optimistic, // question resolve without any dispute and no opposition
-    Weighted, // question resolve as weighted there was the opposition
-    Council // resolve by council
+    Weighted,   // question resolve as weighted there was the opposition
+    Council,    // resolve by council
 }

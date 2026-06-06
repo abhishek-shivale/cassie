@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 //  ----------------------------------------------------
 //  |                 Events                           |
-//  ---------------------------------------------------- 
+//  ----------------------------------------------------
 // it will appear in rpc so we can index data off chain
 
 // creator created a question
@@ -11,9 +11,8 @@ pub struct CreateQuestion {
     pub creator: Pubkey,
     pub hash: [u8; 32],
     pub metadata_uri: [u8; 128],
-    pub bounty: u64
+    pub bounty: u64,
 }
-
 
 // proposed answer - answer proposed by answerer
 #[event]

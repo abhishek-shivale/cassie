@@ -12,7 +12,7 @@ pub struct Answer {
     // weight = stake * accuracy * loyalty, snapshot
     pub weight: u128,
     // reputation of answerer on the time of answering
-    pub rep_at_answer: u64, 
+    pub rep_at_answer: u64,
     // claimed = is user claim the bounty
     pub claimed: bool,
     // submitted at Unix timestamp for creating the answer

@@ -1,15 +1,14 @@
 use anchor_lang::prelude::*;
 
-
 #[account]
 #[derive(InitSpace)]
 pub struct Question {
     // creator = who creates the question
     pub creator: Pubkey,
-    // hash = the is unique to the on-chain id 
+    // hash = the is unique to the on-chain id
     pub hash: [u8; 32],
     // metadata_uri = arweave/ipfs
-    pub metadata_uri : [u8; 128],
+    pub metadata_uri: [u8; 128],
     // category = category of the question
     pub category: u8,
 
@@ -54,5 +53,5 @@ pub enum QuestionState {
     Resolved,
     Escalated,
     Council,
-    Settled
+    Settled,
 }

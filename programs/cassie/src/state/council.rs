@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 
-
 #[account]
 #[derive(InitSpace)]
 pub struct CouncilTotal {
@@ -15,7 +14,6 @@ pub struct CouncilTotal {
     // bump of config
     pub bump: u8,
 }
-
 
 #[account]
 #[derive(InitSpace)]

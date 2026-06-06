@@ -65,7 +65,6 @@ impl<'info> Propose<'info> {
         Ok(())
     }
 
-
     pub fn propose(&mut self) -> Result<()> {
         let ans = &mut self.question;
         // ans.

@@ -1,8 +1,8 @@
 use crate::constants::{ADMIN_CONFIG_SEED, USDC_PUBKEY};
 use crate::state::admin::OracleConfig;
+use crate::{MAX_COUNCIL_MEMBER, MIN_DISPUTE_BOND, MIN_STAKE};
 use anchor_lang::prelude::*;
 use anchor_spl::{token::Mint, token_interface::TokenInterface};
-use crate::{MAX_COUNCIL_MEMBER, MIN_DISPUTE_BOND, MIN_STAKE};
 
 #[derive(Accounts)]
 pub struct InitializeConfig<'info> {
@@ -39,7 +39,7 @@ impl<'info> InitializeConfig<'info> {
         treasury: Pubkey,
         treasury_bps: u64,
         council: [Pubkey; MAX_COUNCIL_MEMBER],
-        council_size: u8
+        council_size: u8,
     ) -> Result<()> {
         let quorum = council_size.checked_mul(2).unwrap().checked_div(3).unwrap();
         self.config.set_inner(OracleConfig {
@@ -59,7 +59,7 @@ impl<'info> InitializeConfig<'info> {
             treasury,
             treasury_bps,
             min_stake: MIN_STAKE,
-            freeze: false
+            freeze: false,
         });
         Ok(())
     }

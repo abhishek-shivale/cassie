@@ -68,7 +68,7 @@ pub mod cassie {
         default_dispute_window: Option<i64>,
         default_council_window: Option<i64>,
         default_answer_window: Option<i64>,
-        freeze: Option<bool>
+        freeze: Option<bool>,
     ) -> Result<()> {
         ctx.accounts.update_config(
             default_dispute_window,
