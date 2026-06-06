@@ -1,6 +1,7 @@
 use crate::constants::*;
 use crate::{
     CassieError, DisputeConfig, DisputeCreated, OracleConfig, Outcome, Question, QuestionState,
+    Reputation,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
@@ -61,6 +62,16 @@ pub struct Dispute<'info> {
     )]
     pub disputer_config: Account<'info, DisputeConfig>,
 
+    // disputer's reputation - created here so claim_reward can update it later
+    #[account(
+        init_if_needed,
+        payer = disputer,
+        space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
+        seeds = [REPUTATION_SEED.as_ref(), disputer.key().as_ref()],
+        bump
+    )]
+    pub reputation: Account<'info, Reputation>,
+
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -72,7 +83,7 @@ impl<'info> Dispute<'info> {
         bond: u64,
         claimed_outcome: bool,
         reason_hash: [u8; 128],
-        bump: u8,
+        bumps: &DisputeBumps,
     ) -> Result<()> {
         require!(!self.config.freeze, CassieError::ProgramFrozen);
         require_eq!(bond, MIN_DISPUTE_BOND, CassieError::InsufficientStake);
@@ -101,10 +112,17 @@ impl<'info> Dispute<'info> {
             bond_amount: bond,
             resolved: false,
             reward: 0,
+            claimed: false,
             claimed_outcome,
             reason_hash,
-            bump,
+            bump: bumps.disputer_config,
         });
+
+        // first-time disputer: stamp their fresh reputation account
+        if self.reputation.voter == Pubkey::default() {
+            self.reputation.voter = self.disputer.key();
+            self.reputation.bump = bumps.reputation;
+        }
 
         emit!(DisputeCreated {
             hash: self.question.hash,

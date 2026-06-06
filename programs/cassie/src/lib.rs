@@ -162,12 +162,7 @@ pub mod cassie {
         claimed_outcome: bool,
         reason_hash: [u8; 128],
     ) -> Result<()> {
-        ctx.accounts.dispute(
-            bond,
-            claimed_outcome,
-            reason_hash,
-            ctx.bumps.disputer_config,
-        )
+        ctx.accounts.dispute(bond, claimed_outcome, reason_hash, &ctx.bumps)
     }
 
     pub fn council_vote(ctx: Context<Vote>, _hash: [u8; 32], vote: bool) -> Result<()> {
@@ -180,5 +175,9 @@ pub mod cassie {
 
     pub fn settle_question(ctx: Context<Settle>, hash: [u8; 32]) -> Result<()> {
         ctx.accounts.settle(hash)
+    }
+
+    pub fn claim_reward(ctx: Context<ClaimReward>, hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.claim(hash)
     }
 }

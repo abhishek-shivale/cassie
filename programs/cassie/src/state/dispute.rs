@@ -17,7 +17,9 @@ pub struct DisputeConfig {
     pub resolved: bool,
     // dispute reward
     pub reward: u64,
-    
+    // did the disputer claim their payout + rep update
+    pub claimed: bool,
+
     // bump
     pub bump: u8,
 }

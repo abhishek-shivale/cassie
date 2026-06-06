@@ -1,4 +1,4 @@
-use crate::aggregation::compute_reward_split;
+use crate::aggregation::{compute_reward_split, RewardSplit};
 use crate::constants::*;
 use crate::error::CassieError;
 use crate::{DisputeConfig, OracleConfig, Outcome, Question, QuestionSettled, QuestionState};
@@ -70,29 +70,63 @@ impl<'info> Settle<'info> {
             matches!(self.question.state, QuestionState::Resolved),
             CassieError::InvalidState
         );
-        // dispute window must be closed before settling
         require!(
             Clock::get()?.unix_timestamp > self.question.dispute_deadline,
             CassieError::DisputeWindowActive
         );
 
         let result = self.outcome.result;
-        // winning side decides correct count + the losing stake that gets slashed
         let (correct_count, loser_stake) = if result {
             (self.question.yes_count, self.question.total_no_stake)
         } else {
             (self.question.no_count, self.question.total_yes_stake)
         };
 
+        let split = self.deduct_treasury(loser_stake as u64, correct_count, hash)?;
+
+
+        let mut answer_pool = split.total;
+        if let Some(dispute) = &mut self.dispute {
+            if dispute.claimed_outcome == result {
+                let slash_share = ((split.slash_amount as u128) * (DISPUTE_REWARD_BPS as u128)
+                    / BPS_DENOMINATOR) as u64;
+                dispute.resolved = true;
+                dispute.reward = dispute.bond_amount.saturating_add(slash_share);
+                answer_pool = answer_pool.saturating_sub(slash_share);
+            } else {
+                dispute.resolved = false;
+                dispute.reward = 0;
+            }
+        }
+
+        let per_answer_reward = if correct_count == 0 {
+            0
+        } else {
+            answer_pool / (correct_count as u64)
+        };
+        self.question.per_answer_reward = per_answer_reward;
+        self.question.state = QuestionState::Settled;
+
+        emit!(QuestionSettled {
+            hash,
+            result,
+            treasury_cut: split.treasury_cut,
+            per_answer_reward,
+            slash_amount: split.slash_amount,
+        });
+
+        Ok(())
+    }
+
+    fn deduct_treasury(&self, loser_stake: u64, correct_count: u32, hash: [u8; 32]) -> Result<RewardSplit> {
         let split = compute_reward_split(
             self.question.bounty,
-            loser_stake as u64,
+            loser_stake,
             correct_count,
             self.config.slash_bps as u16,
             self.config.treasury_bps as u16,
         );
 
-        // protocol fee: pool -> treasury, signed by the question PDA
         if split.treasury_cut > 0 {
             let bump = [self.question.bump];
             let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref(), &bump];
@@ -111,42 +145,6 @@ impl<'info> Settle<'info> {
                 self.usdc_mint.decimals,
             )?;
         }
-
-        // resolve the dispute (if any). disputer is paid later via claim, not here.
-        let mut answer_pool = split.total;
-        if let Some(dispute) = &mut self.dispute {
-            if dispute.claimed_outcome == result {
-                // disputer was right -> bond back + a share of the slashed pool
-                let slash_share = ((split.slash_amount as u128) * (DISPUTE_REWARD_BPS as u128)
-                    / BPS_DENOMINATOR) as u64;
-                dispute.resolved = true;
-                dispute.reward = dispute.bond_amount.saturating_add(slash_share);
-                // the disputer's cut comes out of the answerer pool (conserved)
-                answer_pool = answer_pool.saturating_sub(slash_share);
-            } else {
-                // disputer was wrong -> bond slashed, stays in the pool
-                dispute.resolved = false;
-                dispute.reward = 0;
-            }
-        }
-
-        // equal reward per correct answer for claim_reward to read
-        let per_answer_reward = if correct_count == 0 {
-            0
-        } else {
-            answer_pool / (correct_count as u64)
-        };
-        self.question.per_answer_reward = per_answer_reward;
-        self.question.state = QuestionState::Settled;
-
-        emit!(QuestionSettled {
-            hash,
-            result,
-            treasury_cut: split.treasury_cut,
-            per_answer_reward,
-            slash_amount: split.slash_amount,
-        });
-
-        Ok(())
+        Ok(split)
     }
 }
