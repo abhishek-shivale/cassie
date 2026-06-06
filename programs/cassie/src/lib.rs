@@ -177,4 +177,8 @@ pub mod cassie {
     pub fn finalize_council(ctx: Context<Finalize>, _hash: [u8; 32]) -> Result<()> {
         ctx.accounts.finalize()
     }
+
+    pub fn settle_question(ctx: Context<Settle>, hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.settle(hash)
+    }
 }

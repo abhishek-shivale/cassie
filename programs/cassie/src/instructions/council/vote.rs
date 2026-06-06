@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::error::CassieError;
-use crate::{CouncilTotal, CouncilVote, OracleConfig, Question, QuestionState};
+use crate::{CouncilTotal, CouncilVote, CouncilVoted, OracleConfig, Question, QuestionState};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -91,6 +91,14 @@ impl<'info> Vote<'info> {
             vote,
             voted_at: now,
             bump: bumps.council_vote,
+        });
+
+        emit!(CouncilVoted {
+            hash: self.question.hash,
+            member: self.voter.key(),
+            vote,
+            yes_count: self.council_total.yes_count,
+            no_count: self.council_total.no_count,
         });
 
         Ok(())

@@ -50,3 +50,32 @@ pub struct DisputeCreated {
     pub claimed_outcome: bool,
     pub reason_hash: [u8; 128],
 }
+
+// a council member cast a vote
+#[event]
+pub struct CouncilVoted {
+    pub hash: [u8; 32],
+    pub member: Pubkey,
+    pub vote: bool,
+    pub yes_count: u8,
+    pub no_count: u8,
+}
+
+// council reached quorum, verdict set
+#[event]
+pub struct CouncilFinalized {
+    pub hash: [u8; 32],
+    pub result: bool,
+    pub council_yes: u8,
+    pub council_no: u8,
+}
+
+// question settled - pool split + payouts ready to claim
+#[event]
+pub struct QuestionSettled {
+    pub hash: [u8; 32],
+    pub result: bool,
+    pub treasury_cut: u64,
+    pub per_answer_reward: u64,
+    pub slash_amount: u64,
+}

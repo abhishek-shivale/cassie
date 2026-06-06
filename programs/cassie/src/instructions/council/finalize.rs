@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::error::CassieError;
-use crate::{CouncilTotal, OracleConfig, Outcome, Question, QuestionState, Resolver};
+use crate::{CouncilFinalized, CouncilTotal, OracleConfig, Outcome, Question, QuestionState, Resolver};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -79,6 +79,13 @@ impl<'info> Finalize<'info> {
         self.outcome.council_yes = self.council_total.yes_count;
         self.outcome.council_no = self.council_total.no_count;
         self.outcome.settled_at = now;
+
+        emit!(CouncilFinalized {
+            hash: self.question.hash,
+            result: verdict,
+            council_yes: self.council_total.yes_count,
+            council_no: self.council_total.no_count,
+        });
 
         Ok(())
     }

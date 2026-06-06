@@ -49,6 +49,9 @@ pub struct Question {
     pub yes_count: u32,
     pub no_count: u32,
 
+    // equal reward per correct answer, set at settle, read at claim
+    pub per_answer_reward: u64,
+
     // question state
     pub state: QuestionState,
 }

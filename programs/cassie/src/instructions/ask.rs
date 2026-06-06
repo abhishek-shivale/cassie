@@ -100,6 +100,7 @@ impl<'info> Ask<'info> {
             hash,
             yes_count: 0,
             no_count: 0,
+            per_answer_reward: 0,
             metadata_uri,
             callback_program,
             callback_discriminator,
