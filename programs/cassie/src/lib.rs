@@ -154,4 +154,19 @@ pub mod cassie {
     pub fn close_proposers(ctx: Context<CloseProposer>, _hash: [u8; 32]) -> Result<()> {
         ctx.accounts.close(&ctx.bumps)
     }
+
+    pub fn dispute(
+        ctx: Context<Dispute>,
+        _hash: [u8; 32],
+        bond: u64,
+        claimed_outcome: bool,
+        reason_hash: [u8; 128],
+    ) -> Result<()> {
+        ctx.accounts.dispute(
+            bond,
+            claimed_outcome,
+            reason_hash,
+            ctx.bumps.disputer_config,
+        )
+    }
 }

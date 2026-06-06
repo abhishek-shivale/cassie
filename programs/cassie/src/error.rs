@@ -50,4 +50,6 @@ pub enum CassieError {
     CouncilMemberShouldNotBeZero,
     #[msg("Program frozen.")]
     ProgramFrozen,
+    #[msg("Invalid claimed dispute outcome.")]
+    InvalidDisputeOutcome,
 }
