@@ -39,7 +39,7 @@ pub struct Dispute<'info> {
         associated_token::mint = usdc_mint,
         associated_token::authority = question,
     )]
-    pub bond_ata: InterfaceAccount<'info, anchor_spl::token_interface::TokenAccount>, // reward pool
+    pub bond_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
@@ -62,7 +62,6 @@ pub struct Dispute<'info> {
     )]
     pub disputer_config: Account<'info, DisputeConfig>,
 
-    // disputer's reputation - created here so claim_reward can update it later
     #[account(
         init_if_needed,
         payer = disputer,
@@ -121,7 +120,6 @@ impl<'info> Dispute<'info> {
             bump: bumps.disputer_config,
         });
 
-        // first-time disputer: stamp their fresh reputation account
         if self.reputation.voter == Pubkey::default() {
             self.reputation.voter = self.disputer.key();
             self.reputation.bump = bumps.reputation;

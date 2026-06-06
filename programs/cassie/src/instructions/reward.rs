@@ -34,15 +34,13 @@ pub struct ClaimReward<'info> {
     )]
     pub outcome: Account<'info, Outcome>,
 
-    // claimer's answer - present if they answered
     #[account(
         mut,
         seeds = [ANSWER_SEED.as_ref(), hash.as_ref(), claimer.key().as_ref()],
         bump = answer.bump,
     )]
     pub answer: Option<Account<'info, Answer>>,
-
-    // claimer's dispute - present if they disputed (claimer must be the disputer)
+    
     #[account(
         mut,
         seeds = [DISPUTE_SEED.as_ref(), hash.as_ref()],
@@ -95,7 +93,6 @@ impl<'info> ClaimReward<'info> {
         let mut acted = false;
         let mut dispute_won: Option<bool> = None;
 
-        // a claimer can be an answerer, a disputer, or both
         if let Some(payout) = self.settle_answer(&mut ru, result, now) {
             total_payout = total_payout.saturating_add(payout);
             acted = true;
@@ -116,7 +113,6 @@ impl<'info> ClaimReward<'info> {
         Ok(())
     }
 
-    // snapshot the mutable subset of the reputation account
     fn snapshot_rep(&self) -> RepUpdate {
         RepUpdate {
             score: self.reputation.score,
@@ -129,7 +125,6 @@ impl<'info> ClaimReward<'info> {
         }
     }
 
-    // answerer side: payout + reputation. None if no answer / already claimed.
     fn settle_answer(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<u64> {
         let is_council = self.config.council.contains(&self.claimer.key());
         let per_answer_reward = self.question.per_answer_reward;
@@ -158,8 +153,6 @@ impl<'info> ClaimReward<'info> {
         Some(payout)
     }
 
-    // disputer side: payout + reputation. None if no dispute / already claimed.
-    // returns (payout, won).
     fn settle_dispute(&mut self, ru: &mut RepUpdate, now: i64) -> Option<(u64, bool)> {
         let dispute = self.dispute.as_mut()?;
         if dispute.claimed {
@@ -173,7 +166,6 @@ impl<'info> ClaimReward<'info> {
         Some((payout, won))
     }
 
-    // pool -> claimer, signed by the question PDA
     fn transfer_payout(&self, hash: [u8; 32], amount: u64) -> Result<()> {
         let bump = [self.question.bump];
         let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref(), &bump];
@@ -194,7 +186,6 @@ impl<'info> ClaimReward<'info> {
         Ok(())
     }
 
-    // write the updated reputation back, including dispute counters
     fn commit_reputation(&mut self, ru: RepUpdate, now: i64, dispute_won: Option<bool>) {
         let rep = &mut self.reputation;
         rep.score = ru.score;
