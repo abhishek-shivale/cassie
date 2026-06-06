@@ -4,9 +4,7 @@ use crate::aggregation::{
 };
 use crate::constants::*;
 use crate::error::CassieError;
-use crate::{
-    Answer, DisputeConfig, OracleConfig, Outcome, Question, QuestionState, Reputation,
-};
+use crate::{Answer, DisputeConfig, OracleConfig, Outcome, Question, QuestionState, Reputation};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
     transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
@@ -142,7 +140,13 @@ impl<'info> ClaimReward<'info> {
             return None;
         }
         let correct = answer.side == result;
-        let payout = compute_payout(answer.side, answer.stake, result, per_answer_reward, slash_bps);
+        let payout = compute_payout(
+            answer.side,
+            answer.stake,
+            result,
+            per_answer_reward,
+            slash_bps,
+        );
         let slashed = answer.stake.saturating_sub(payout);
         answer.claimed = true;
 

@@ -100,7 +100,10 @@ impl<'info> Dispute<'info> {
             now <= self.question.dispute_deadline,
             CassieError::DisputeWindowClosed
         );
-        require!(claimed_outcome != self.outcome.result, CassieError::InvalidDisputeOutcome);
+        require!(
+            claimed_outcome != self.outcome.result,
+            CassieError::InvalidDisputeOutcome
+        );
 
         let question = &mut self.question;
         question.state = QuestionState::Escalated;

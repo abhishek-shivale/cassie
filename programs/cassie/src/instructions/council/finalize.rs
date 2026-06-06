@@ -1,6 +1,8 @@
 use crate::constants::*;
 use crate::error::CassieError;
-use crate::{CouncilFinalized, CouncilTotal, OracleConfig, Outcome, Question, QuestionState, Resolver};
+use crate::{
+    CouncilFinalized, CouncilTotal, OracleConfig, Outcome, Question, QuestionState, Resolver,
+};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]

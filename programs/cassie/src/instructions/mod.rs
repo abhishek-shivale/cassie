@@ -1,16 +1,16 @@
 pub mod ask;
-pub mod proposer;
-pub mod settle;
-pub mod dispute;
-pub mod council;
 pub mod config;
+pub mod council;
+pub mod dispute;
+pub mod proposer;
 pub mod reward;
+pub mod settle;
 
 pub use ask::*;
-pub use config::update::*;
 pub use config::initialize::*;
-pub use proposer::*;
-pub use settle::*;
-pub use dispute::*;
+pub use config::update::*;
 pub use council::*;
+pub use dispute::*;
+pub use proposer::*;
 pub use reward::*;
+pub use settle::*;

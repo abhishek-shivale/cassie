@@ -1,4 +1,8 @@
-use crate::{EscalationReason, Resolver, ACCURACY_MAX_MULT, BPS_DENOMINATOR, COUNCIL_GAIN, COUNCIL_LOSS, DISPUTE_LOSS, DISPUTE_WIN_GAIN, GAIN, LOSS, LOYALTY_MAX_MULT, MAX_DAYS, MAX_SCORE, SCALE, SECONDS_PER_DAY};
+use crate::{
+    EscalationReason, Resolver, ACCURACY_MAX_MULT, BPS_DENOMINATOR, COUNCIL_GAIN, COUNCIL_LOSS,
+    DISPUTE_LOSS, DISPUTE_WIN_GAIN, GAIN, LOSS, LOYALTY_MAX_MULT, MAX_DAYS, MAX_SCORE, SCALE,
+    SECONDS_PER_DAY,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AggregationResult {
@@ -161,7 +165,6 @@ pub fn apply_dispute_reputation(rep: &mut RepUpdate, won: bool, now: i64) {
     }
     bump_loyalty(rep, now);
 }
-
 
 #[cfg(test)]
 mod test {

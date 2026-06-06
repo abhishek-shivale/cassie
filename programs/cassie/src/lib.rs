@@ -162,7 +162,8 @@ pub mod cassie {
         claimed_outcome: bool,
         reason_hash: [u8; 128],
     ) -> Result<()> {
-        ctx.accounts.dispute(bond, claimed_outcome, reason_hash, &ctx.bumps)
+        ctx.accounts
+            .dispute(bond, claimed_outcome, reason_hash, &ctx.bumps)
     }
 
     pub fn council_vote(ctx: Context<Vote>, _hash: [u8; 32], vote: bool) -> Result<()> {
