@@ -19,14 +19,17 @@ pub struct UpdateConfig<'info> {
 impl<'info> UpdateConfig<'info> {
     pub fn update_config(
         &mut self,
-        default_dispute_window: i64,
-        default_council_window: i64,
-        default_dispute_period: i64,
+        default_dispute_window: Option<i64>,
+        default_council_window: Option<i64>,
+        default_answer_window: Option<i64>,
+        freeze: Option<bool>
     ) -> Result<()> {
        let cfg = &mut self.config;
-        cfg.default_dispute_window = default_dispute_window;
-        cfg.default_council_window = default_council_window;
-        cfg.default_answer_window = default_dispute_period;
+        if let Some(v) = default_dispute_window { cfg.default_dispute_window = v; }
+        if let Some(v) = default_council_window { cfg.default_council_window = v; }
+        if let Some(v) = default_answer_window { cfg.default_answer_window = v; }
+        if let Some(f) = freeze { cfg.freeze = f; }
+        
         Ok(())
     }
 }

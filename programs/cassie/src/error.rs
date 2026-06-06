@@ -39,4 +39,14 @@ pub enum CassieError {
     CallbackInvocationFailed,
     #[msg("unauthorized admin.")]
     UnauthorizedAdmin,
+    #[msg("MAX BPS reached.")]
+    MaxBpsReached,
+    #[msg("Invalid window timeframe")]
+    InvalidWindow,
+    #[msg("max council size reached.")]
+    MaxCouncilSizeReached,
+    #[msg("bounty size can not be lower that this.")]
+    BountySizeCanNotBeLower,
+    #[msg("council member should not be zero.")]
+    CouncilMemberShouldNotBeZero,
 }

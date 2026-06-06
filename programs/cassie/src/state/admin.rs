@@ -40,6 +40,9 @@ pub struct OracleConfig {
     pub quorum: u8,
 
     pub bump: u8, // bump of the pda so we don't have to derive everytime
+    
+    // freeze this will freeze the program no action will be done from this moment
+    pub freeze: bool
 }
 
 impl OracleConfig {

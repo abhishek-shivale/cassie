@@ -2,14 +2,15 @@ use crate::constants::{ADMIN_CONFIG_SEED, USDC_PUBKEY};
 use crate::state::admin::OracleConfig;
 use anchor_lang::prelude::*;
 use anchor_spl::{token::Mint, token_interface::TokenInterface};
+use crate::{MAX_COUNCIL_MEMBER, MIN_DISPUTE_BOND, MIN_STAKE};
 
 #[derive(Accounts)]
 pub struct InitializeConfig<'info> {
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub admin: Signer<'info>,
     #[account(
-        init_if_needed,
-        payer = authority,
+        init,
+        payer = admin,
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
         space= OracleConfig::DISCRIMINATOR.len() + OracleConfig::INIT_SPACE,
         bump,
@@ -34,19 +35,18 @@ impl<'info> InitializeConfig<'info> {
         default_dispute_window: i64,
         divergence_bps: u64,
         min_bounty: u64,
-        min_dispute_bond: u64,
         slash_bps: u64,
         treasury: Pubkey,
         treasury_bps: u64,
-        min_stake: u64,
-        council: [Pubkey; 9],
+        council: [Pubkey; MAX_COUNCIL_MEMBER],
+        council_size: u8
     ) -> Result<()> {
-        let quorum = council.len().checked_mul(2).unwrap().checked_div(3).unwrap();
+        let quorum = council_size.checked_mul(2).unwrap().checked_div(3).unwrap();
         self.config.set_inner(OracleConfig {
-            admin: self.authority.key(),
+            admin: self.admin.key(),
             mint: self.usdc_mint.key(),
-            council_size: council.len() as u8,
-            quorum: quorum as u8,
+            council_size,
+            quorum,
             bump,
             council,
             default_answer_window,
@@ -54,11 +54,12 @@ impl<'info> InitializeConfig<'info> {
             default_dispute_window,
             divergence_bps,
             min_bounty,
-            min_dispute_bond,
+            min_dispute_bond: MIN_DISPUTE_BOND,
             slash_bps,
             treasury,
             treasury_bps,
-            min_stake,
+            min_stake: MIN_STAKE,
+            freeze: false
         });
         Ok(())
     }

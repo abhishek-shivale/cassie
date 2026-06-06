@@ -44,7 +44,7 @@ pub struct Ask<'info> {
         associated_token::mint = usdc_mint,
         associated_token::authority = config,
     )]
-    pub bounty_ata: InterfaceAccount<'info, TokenAccount>, // reward pool with Escrow
+    pub bounty_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
 
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -110,6 +110,7 @@ impl<'info> Ask<'info> {
             metadata_uri,
             bounty,
         });
+
         Ok(())
     }
 }

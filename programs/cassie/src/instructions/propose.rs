@@ -7,14 +7,14 @@ use anchor_spl::token_interface::{
 };
 
 #[derive(Accounts)]
-#[instruction(asker: Pubkey, nonce: u64)]
+#[instruction(asker: Pubkey, hash: [u8; 32])]
 pub struct Propose<'info> {
     #[account(mut)]
     pub proposer: Signer<'info>,
 
     #[account(
         mut,
-         seeds = [QUESTION_CONFIG_SEED.as_ref(), asker.key().as_ref(), nonce.to_le_bytes().as_ref()],
+         seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
         bump = question.bump
     )]
     pub question: Account<'info, Question>,

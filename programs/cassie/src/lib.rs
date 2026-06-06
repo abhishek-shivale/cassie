@@ -7,6 +7,7 @@ pub mod state;
 use anchor_lang::prelude::*;
 
 pub use constants::*;
+pub use error::*;
 pub use events::*;
 pub use instructions::*;
 pub use state::*;
@@ -24,13 +25,29 @@ pub mod cassie {
         default_dispute_window: i64,
         divergence_bps: u64,
         min_bounty: u64,
-        min_dispute_bond: u64,
         slash_bps: u64,
         treasury: Pubkey,
         treasury_bps: u64,
-        min_stake: u64,
         council: [Pubkey; 9],
+        council_size: u8,
     ) -> Result<()> {
+        // check bps because we don't want admin to slash more than 100%
+        require_gte!(10000, divergence_bps, CassieError::MaxBpsReached);
+        require_gte!(10000, treasury_bps, CassieError::MaxBpsReached);
+        require_gte!(10000, slash_bps, CassieError::MaxBpsReached);
+
+        // its window check all in seconds
+        require_gte!(default_dispute_window, 7200, CassieError::InvalidWindow);
+        require_gte!(default_answer_window, 3600, CassieError::InvalidWindow);
+        require_gte!(default_council_window, 86400, CassieError::InvalidWindow);
+
+        // council
+        require!(council_size <= 9, CassieError::MaxCouncilSizeReached);
+        require!(council_size > 0, CassieError::CouncilMemberShouldNotBeZero);
+
+        // bounty
+        require!(min_bounty >= 10, CassieError::BountySizeCanNotBeLower);
+
         ctx.accounts.init_config(
             ctx.bumps.config,
             default_answer_window,
@@ -38,25 +55,26 @@ pub mod cassie {
             default_dispute_window,
             divergence_bps,
             min_bounty,
-            min_dispute_bond,
             slash_bps,
             treasury,
             treasury_bps,
-            min_stake,
             council,
+            council_size,
         )
     }
 
     pub fn update_config(
         ctx: Context<UpdateConfig>,
-        default_dispute_window: i64,
-        default_council_window: i64,
-        default_dispute_period: i64,
+        default_dispute_window: Option<i64>,
+        default_council_window: Option<i64>,
+        default_answer_window: Option<i64>,
+        freeze: Option<bool>
     ) -> Result<()> {
         ctx.accounts.update_config(
             default_dispute_window,
             default_council_window,
-            default_dispute_period,
+            default_answer_window,
+            freeze,
         )
     }
 
