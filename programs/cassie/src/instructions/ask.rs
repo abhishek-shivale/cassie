@@ -1,7 +1,8 @@
 use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
 use crate::state::admin::OracleConfig;
 use crate::state::question::Question;
-use crate::CreateQuestion;
+use crate::error::CassieError;
+use crate::{CreateQuestion, QuestionState};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -24,7 +25,7 @@ pub struct Ask<'info> {
         init,
         payer = questioner,
         space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), questioner.key().as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
         bump
     )]
     pub question: Account<'info, Question>,
@@ -41,10 +42,12 @@ pub struct Ask<'info> {
     pub questioner_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
+        init,
+        payer = questioner,
         associated_token::mint = usdc_mint,
-        associated_token::authority = config,
+        associated_token::authority = question,
     )]
-    pub bounty_ata: InterfaceAccount<'info, TokenAccount>, // reward pool with Escrow
+    pub bounty_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
 
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -53,7 +56,6 @@ pub struct Ask<'info> {
 
 impl<'info> Ask<'info> {
     pub fn deposit_bounty(&mut self, bounty: u64) -> Result<()> {
-        require_gt!(self.config.min_bounty, bounty);
         transfer_checked(
             CpiContext::new(
                 self.token_program.key(),
@@ -80,6 +82,9 @@ impl<'info> Ask<'info> {
         callback_program: Pubkey,
         callback_discriminator: [u8; 8],
     ) -> Result<()> {
+        require!(!self.config.freeze, CassieError::ProgramFrozen);
+        require_gte!(bounty, self.config.min_bounty, CassieError::InsufficientBounty);
+
         let created_at = Clock::get()?.unix_timestamp;
         let answer_deadline = self.config.get_question_deadline(created_at);
         self.question.set_inner(Question {
@@ -97,9 +102,13 @@ impl<'info> Ask<'info> {
             category,
             created_at,
             hash,
+            yes_count: 0,
+            no_count: 0,
+            per_answer_reward: 0,
             metadata_uri,
             callback_program,
             callback_discriminator,
+            state: QuestionState::Asked,
         });
 
         self.deposit_bounty(bounty)?;
@@ -110,6 +119,7 @@ impl<'info> Ask<'info> {
             metadata_uri,
             bounty,
         });
+
         Ok(())
     }
 }

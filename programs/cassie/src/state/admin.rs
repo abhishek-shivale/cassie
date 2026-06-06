@@ -40,6 +40,9 @@ pub struct OracleConfig {
     pub quorum: u8,
 
     pub bump: u8, // bump of the pda so we don't have to derive everytime
+
+    // freeze this will freeze the program no action will be done from this moment
+    pub freeze: bool,
 }
 
 impl OracleConfig {
@@ -50,9 +53,8 @@ impl OracleConfig {
     pub fn get_dispute_deadline(&self, disputed_at: UnixTimestamp) -> i64 {
         disputed_at + self.default_dispute_window
     }
-    
+
     pub fn get_council_deadline(&self, council_at: UnixTimestamp) -> i64 {
         council_at + self.default_council_window
     }
-
 }

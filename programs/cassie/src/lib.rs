@@ -1,3 +1,4 @@
+mod aggregation;
 pub mod constants;
 pub mod error;
 pub mod events;
@@ -7,6 +8,7 @@ pub mod state;
 use anchor_lang::prelude::*;
 
 pub use constants::*;
+pub use error::*;
 pub use events::*;
 pub use instructions::*;
 pub use state::*;
@@ -24,12 +26,11 @@ pub mod cassie {
         default_dispute_window: i64,
         divergence_bps: u64,
         min_bounty: u64,
-        min_dispute_bond: u64,
         slash_bps: u64,
         treasury: Pubkey,
         treasury_bps: u64,
-        min_stake: u64,
         council: [Pubkey; 9],
+        council_size: u8,
     ) -> Result<()> {
         ctx.accounts.init_config(
             ctx.bumps.config,
@@ -38,25 +39,26 @@ pub mod cassie {
             default_dispute_window,
             divergence_bps,
             min_bounty,
-            min_dispute_bond,
             slash_bps,
             treasury,
             treasury_bps,
-            min_stake,
             council,
+            council_size,
         )
     }
 
     pub fn update_config(
         ctx: Context<UpdateConfig>,
-        default_dispute_window: i64,
-        default_council_window: i64,
-        default_dispute_period: i64,
+        default_dispute_window: Option<i64>,
+        default_council_window: Option<i64>,
+        default_answer_window: Option<i64>,
+        freeze: Option<bool>,
     ) -> Result<()> {
         ctx.accounts.update_config(
             default_dispute_window,
             default_council_window,
-            default_dispute_period,
+            default_answer_window,
+            freeze,
         )
     }
 
@@ -84,7 +86,38 @@ pub mod cassie {
         )
     }
 
-    // pub fn answer(ctx: Context<Answer>) -> Result<()> {
-    //
-    // }
+    pub fn propose(ctx: Context<Propose>, _hash: [u8; 32], stake: u64, side: bool) -> Result<()> {
+        ctx.accounts.propose(stake, side, &ctx.bumps)
+    }
+
+    pub fn close_proposers(ctx: Context<CloseProposer>, _hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.close(&ctx.bumps)
+    }
+
+    pub fn dispute(
+        ctx: Context<Dispute>,
+        _hash: [u8; 32],
+        bond: u64,
+        claimed_outcome: bool,
+        reason_hash: [u8; 128],
+    ) -> Result<()> {
+        ctx.accounts
+            .dispute(bond, claimed_outcome, reason_hash, &ctx.bumps)
+    }
+
+    pub fn council_vote(ctx: Context<Vote>, _hash: [u8; 32], vote: bool) -> Result<()> {
+        ctx.accounts.vote(vote, &ctx.bumps)
+    }
+
+    pub fn finalize_council(ctx: Context<Finalize>, _hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.finalize()
+    }
+
+    pub fn settle_question(ctx: Context<Settle>, hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.settle(hash)
+    }
+
+    pub fn claim_reward(ctx: Context<ClaimReward>, hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.claim(hash)
+    }
 }

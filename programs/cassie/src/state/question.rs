@@ -1,15 +1,14 @@
 use anchor_lang::prelude::*;
 
-
 #[account]
 #[derive(InitSpace)]
 pub struct Question {
     // creator = who creates the question
     pub creator: Pubkey,
-    // hash = the is unique to the on-chain id 
+    // hash = the is unique to the on-chain id
     pub hash: [u8; 32],
     // metadata_uri = arweave/ipfs
-    pub metadata_uri : [u8; 128],
+    pub metadata_uri: [u8; 128],
     // category = category of the question
     pub category: u8,
 
@@ -45,8 +44,19 @@ pub struct Question {
 
     // bump of the question
     pub bump: u8,
+
+    // to keep track of how many people voted what
+    pub yes_count: u32,
+    pub no_count: u32,
+
+    // equal reward per correct answer, set at settle, read at claim
+    pub per_answer_reward: u64,
+
+    // question state
+    pub state: QuestionState,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
 pub enum QuestionState {
     Asked,
     Answering,
@@ -54,5 +64,5 @@ pub enum QuestionState {
     Resolved,
     Escalated,
     Council,
-    Settled
+    Settled,
 }
