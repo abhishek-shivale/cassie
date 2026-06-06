@@ -32,35 +32,6 @@ pub mod cassie {
         council: [Pubkey; 9],
         council_size: u8,
     ) -> Result<()> {
-        // check bps because we don't want admin to slash more than 100%
-        require_gte!(
-            BPS_DENOMINATOR as u64,
-            divergence_bps,
-            CassieError::MaxBpsReached
-        );
-        require_gte!(
-            BPS_DENOMINATOR as u64,
-            treasury_bps,
-            CassieError::MaxBpsReached
-        );
-        require_gte!(
-            BPS_DENOMINATOR as u64,
-            slash_bps,
-            CassieError::MaxBpsReached
-        );
-
-        // its window check all in seconds
-        require_gte!(default_dispute_window, 7200, CassieError::InvalidWindow);
-        require_gte!(default_answer_window, 3600, CassieError::InvalidWindow);
-        require_gte!(default_council_window, 86400, CassieError::InvalidWindow);
-
-        // council
-        require!(council_size <= 9, CassieError::MaxCouncilSizeReached);
-        require!(council_size > 0, CassieError::CouncilMemberShouldNotBeZero);
-
-        // bounty
-        require!(min_bounty >= 10, CassieError::BountySizeCanNotBeLower);
-
         ctx.accounts.init_config(
             ctx.bumps.config,
             default_answer_window,
@@ -92,18 +63,6 @@ pub mod cassie {
     }
 
     pub fn update_council(ctx: Context<UpdateCouncil>, old: Pubkey, new: Pubkey) -> Result<()> {
-        // this we compare and if new or old are zero pubkey it will throw error
-        require_keys_neq!(
-            new,
-            Pubkey::default(),
-            CassieError::CouncilMemberShouldNotBeZero
-        );
-        require_keys_neq!(
-            old,
-            Pubkey::default(),
-            CassieError::CouncilMemberShouldNotBeZero
-        );
-
         ctx.accounts.update_council(old, new)
     }
 
@@ -116,12 +75,6 @@ pub mod cassie {
         callback_program: Pubkey,
         callback_discriminator: [u8; 8],
     ) -> Result<()> {
-        require_gte!(
-            bounty,
-            ctx.accounts.config.min_bounty,
-            CassieError::InsufficientBounty
-        );
-        require!(!ctx.accounts.config.freeze, CassieError::ProgramFrozen);
         ctx.accounts.ask_question(
             hash,
             ctx.bumps.question,
@@ -134,20 +87,6 @@ pub mod cassie {
     }
 
     pub fn propose(ctx: Context<Propose>, _hash: [u8; 32], stake: u64, side: bool) -> Result<()> {
-        require!(!ctx.accounts.config.freeze, CassieError::ProgramFrozen);
-        require!(
-            Clock::get()?.unix_timestamp < ctx.accounts.question.answer_deadline,
-            CassieError::AnswerWindowClosed
-        );
-        require_eq!(stake, MIN_STAKE, CassieError::InsufficientStake);
-        require!(
-            matches!(
-                ctx.accounts.question.state,
-                QuestionState::Asked | QuestionState::Answering
-            ),
-            CassieError::InvalidState
-        );
-
         ctx.accounts.propose(stake, side, &ctx.bumps)
     }
 

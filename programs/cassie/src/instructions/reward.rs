@@ -80,6 +80,7 @@ pub struct ClaimReward<'info> {
 
 impl<'info> ClaimReward<'info> {
     pub fn claim(&mut self, hash: [u8; 32]) -> Result<()> {
+        require!(!self.config.freeze, CassieError::ProgramFrozen);
         require!(
             matches!(self.question.state, QuestionState::Settled),
             CassieError::InvalidState

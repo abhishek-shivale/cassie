@@ -66,16 +66,15 @@ pub fn resolve_or_escalate(
 
 #[derive(Clone, Copy, Debug)]
 pub struct RewardSplit {
-    pub total: u64,             // distributable pool (bounty + slash - treasury)
-    pub treasury_cut: u64,      // protocol cut
-    pub per_answer_reward: u64, // equal share for each correct answerer (v1)
-    pub slash_amount: u64,      // total slashed from losers
+    pub total: u64,        // distributable pool (bounty + slash - treasury)
+    pub treasury_cut: u64, // protocol cut
+    pub slash_amount: u64, // total slashed from losers
 }
 
+// the caller divides `total` among correct answers (after any dispute deduction)
 pub fn compute_reward_split(
     bounty: u64,
     loser_total_stake: u64,
-    correct_count: u32,
     slash_bps: u16,
     treasury_bps: u16,
 ) -> RewardSplit {
@@ -85,16 +84,9 @@ pub fn compute_reward_split(
     let treasury_cut = ((gross as u128) * (treasury_bps as u128) / BPS_DENOMINATOR) as u64;
     let distributable = gross.saturating_sub(treasury_cut);
 
-    let per_answer_reward = if correct_count == 0 {
-        0
-    } else {
-        distributable / (correct_count as u64)
-    };
-
     RewardSplit {
         total: distributable,
         treasury_cut,
-        per_answer_reward,
         slash_amount,
     }
 }
@@ -248,13 +240,14 @@ mod test {
 
     #[test]
     fn reward_split_equal() {
-        // bounty 1000, losers staked 400 total, 50% slash, 5% treasury, 4 correct
-        // slash = 200, gross = 1200, treasury = 60, distributable = 1140, per = 285
-        let s = compute_reward_split(1000, 400, 4, 5000, 500);
+        // bounty 1000, losers staked 400 total, 50% slash, 5% treasury
+        // slash = 200, gross = 1200, treasury = 60, distributable = 1140
+        let s = compute_reward_split(1000, 400, 5000, 500);
         assert_eq!(s.slash_amount, 200);
         assert_eq!(s.treasury_cut, 60);
         assert_eq!(s.total, 1140);
-        assert_eq!(s.per_answer_reward, 285);
+        // 4 correct answerers -> 1140 / 4 = 285 each
+        assert_eq!(s.total / 4, 285);
     }
 
     #[test]

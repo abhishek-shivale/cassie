@@ -1,5 +1,4 @@
 use crate::aggregation::compute_weight;
-use crate::{ACCURACY_MAX_MULT, LOYALTY_MAX_MULT, MAX_DAYS, MAX_SCORE, SCALE};
 use anchor_lang::prelude::*;
 
 #[account]

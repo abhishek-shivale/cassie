@@ -1,6 +1,7 @@
 use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
 use crate::state::admin::OracleConfig;
 use crate::state::question::Question;
+use crate::error::CassieError;
 use crate::{CreateQuestion, QuestionState};
 use anchor_lang::prelude::*;
 use anchor_spl::{
@@ -81,6 +82,9 @@ impl<'info> Ask<'info> {
         callback_program: Pubkey,
         callback_discriminator: [u8; 8],
     ) -> Result<()> {
+        require!(!self.config.freeze, CassieError::ProgramFrozen);
+        require_gte!(bounty, self.config.min_bounty, CassieError::InsufficientBounty);
+
         let created_at = Clock::get()?.unix_timestamp;
         let answer_deadline = self.config.get_question_deadline(created_at);
         self.question.set_inner(Question {

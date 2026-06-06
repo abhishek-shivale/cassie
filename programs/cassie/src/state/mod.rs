@@ -1,7 +1,7 @@
 pub mod admin;
 pub mod answer;
-pub mod council;
-pub mod dispute;
+mod council;
+mod dispute;
 pub mod outcome;
 pub mod question;
 pub mod reputation;

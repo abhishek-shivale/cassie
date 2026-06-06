@@ -28,6 +28,8 @@ pub enum CassieError {
     DisputeWindowClosed,
     #[msg("Dispute window still active.")]
     DisputeWindowActive,
+    #[msg("Council voting window closed.")]
+    CouncilWindowClosed,
     #[msg("Not council member.")]
     NotCouncilMember,
     #[msg("Already voted.")]

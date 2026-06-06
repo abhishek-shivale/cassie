@@ -76,7 +76,7 @@ impl<'info> Vote<'info> {
         // council window must still be open
         require!(
             now <= self.council_total.opened_at + self.config.default_council_window,
-            CassieError::DisputeWindowClosed
+            CassieError::CouncilWindowClosed
         );
 
         // tally

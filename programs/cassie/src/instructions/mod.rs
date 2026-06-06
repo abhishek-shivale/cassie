@@ -1,7 +1,7 @@
 pub mod ask;
 pub mod config;
-pub mod council;
-pub mod dispute;
+mod council;
+mod dispute;
 pub mod proposer;
 pub mod reward;
 pub mod settle;

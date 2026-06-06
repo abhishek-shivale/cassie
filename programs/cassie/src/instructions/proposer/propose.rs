@@ -1,4 +1,5 @@
 use crate::constants::*;
+use crate::error::CassieError;
 use crate::{Answer, OracleConfig, Question, QuestionState, Reputation};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
@@ -84,6 +85,20 @@ impl<'info> Propose<'info> {
     }
 
     pub fn propose(&mut self, stake: u64, side: bool, bump: &ProposeBumps) -> Result<()> {
+        require!(!self.config.freeze, CassieError::ProgramFrozen);
+        require!(
+            Clock::get()?.unix_timestamp < self.question.answer_deadline,
+            CassieError::AnswerWindowClosed
+        );
+        require_eq!(stake, MIN_STAKE, CassieError::InsufficientStake);
+        require!(
+            matches!(
+                self.question.state,
+                QuestionState::Asked | QuestionState::Answering
+            ),
+            CassieError::InvalidState
+        );
+
         if self.question.state == QuestionState::Asked {
             self.question.state = QuestionState::Answering; // first answer
         }

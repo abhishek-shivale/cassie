@@ -82,7 +82,7 @@ impl<'info> Settle<'info> {
             (self.question.no_count, self.question.total_yes_stake)
         };
 
-        let split = self.deduct_treasury(loser_stake as u64, correct_count, hash)?;
+        let split = self.deduct_treasury(loser_stake as u64, hash)?;
 
         let mut answer_pool = split.total;
         if let Some(dispute) = &mut self.dispute {
@@ -117,16 +117,10 @@ impl<'info> Settle<'info> {
         Ok(())
     }
 
-    fn deduct_treasury(
-        &self,
-        loser_stake: u64,
-        correct_count: u32,
-        hash: [u8; 32],
-    ) -> Result<RewardSplit> {
+    fn deduct_treasury(&self, loser_stake: u64, hash: [u8; 32]) -> Result<RewardSplit> {
         let split = compute_reward_split(
             self.question.bounty,
             loser_stake,
-            correct_count,
             self.config.slash_bps as u16,
             self.config.treasury_bps as u16,
         );
