@@ -96,8 +96,8 @@ impl<'info> Propose<'info> {
             question.total_yes_stake = question.total_yes_stake.checked_add(stake as u128).unwrap();
             question.total_yes_weight = question.total_yes_weight.checked_add(weight).unwrap();
         } else {
-            question.total_yes_stake = question.total_no_stake.checked_add(stake as u128).unwrap();
-            question.total_yes_weight = question.total_no_weight.checked_add(weight).unwrap();
+            question.total_no_stake = question.total_no_stake.checked_add(stake as u128).unwrap();
+            question.total_no_weight = question.total_no_weight.checked_add(weight).unwrap();
         }
 
         self.answer.set_inner(Answer {
