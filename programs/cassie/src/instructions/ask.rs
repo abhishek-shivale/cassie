@@ -24,7 +24,7 @@ pub struct Ask<'info> {
         init,
         payer = questioner,
         space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), questioner.key().as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
         bump
     )]
     pub question: Account<'info, Question>,
@@ -53,7 +53,6 @@ pub struct Ask<'info> {
 
 impl<'info> Ask<'info> {
     pub fn deposit_bounty(&mut self, bounty: u64) -> Result<()> {
-        require_gt!(self.config.min_bounty, bounty);
         transfer_checked(
             CpiContext::new(
                 self.token_program.key(),

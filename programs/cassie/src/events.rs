@@ -26,7 +26,7 @@ pub struct ProposedAnswer {
 
 // dispute created
 #[event]
-pub struct Dispute {
+pub struct DisputeCreated {
     pub hash: [u8; 32],
     pub disputer: Pubkey,
     pub bond_amount: u64,

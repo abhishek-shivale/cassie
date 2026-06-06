@@ -79,6 +79,10 @@ pub mod cassie {
     }
 
     pub fn update_council(ctx: Context<UpdateCouncil>, old: Pubkey, new: Pubkey) -> Result<()> {
+        // this we compare and if new or old are zero pubkey it will throw error
+        require_keys_neq!(new, Pubkey::default(), CassieError::CouncilMemberShouldNotBeZero);
+        require_keys_neq!(old, Pubkey::default(), CassieError::CouncilMemberShouldNotBeZero);
+
         ctx.accounts.update_council(old, new)
     }
 
@@ -91,6 +95,8 @@ pub mod cassie {
         callback_program: Pubkey,
         callback_discriminator: [u8; 8],
     ) -> Result<()> {
+        require_gte!(bounty, ctx.accounts.config.min_bounty, CassieError::InsufficientBounty);
+        require!(!ctx.accounts.config.freeze, CassieError::ProgramFrozen);
         ctx.accounts.ask_question(
             hash,
             ctx.bumps.question,
