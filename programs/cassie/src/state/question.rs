@@ -44,8 +44,16 @@ pub struct Question {
 
     // bump of the question
     pub bump: u8,
+
+    // to keep track of how many people voted what
+    pub yes_count: u32,
+    pub no_count: u32,
+
+    // question state
+    pub state: QuestionState,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
 pub enum QuestionState {
     Asked,
     Answering,

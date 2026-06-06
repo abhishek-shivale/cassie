@@ -30,9 +30,16 @@ pub struct Outcome {
     pub bump: u8,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug, InitSpace)]
 pub enum Resolver {
     Optimistic, // question resolve without any dispute and no opposition
     Weighted,   // question resolve as weighted there was the opposition
     Council,    // resolve by council
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum EscalationReason {
+    Divergence, // minority share >= divergence_bps
+    NoAnswer,   // window closed with zero answers
+    Dispute,    // someone posted a counter-bond
 }

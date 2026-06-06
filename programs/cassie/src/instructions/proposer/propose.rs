@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::{Answer, OracleConfig, Question, Reputation};
+use crate::{Answer, OracleConfig, Question, QuestionState, Reputation};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{
@@ -84,6 +84,9 @@ impl<'info> Propose<'info> {
     }
 
     pub fn propose(&mut self, stake: u64, side: bool, bump: &ProposeBumps) -> Result<()> {
+        if self.question.state == QuestionState::Asked {
+            self.question.state = QuestionState::Answering; // first answer
+        }
         // check if voter is new init or old
         if self.reputation.voter == Pubkey::default() {
             self.reputation.voter = self.proposer.key();
@@ -95,9 +98,11 @@ impl<'info> Propose<'info> {
         if side {
             question.total_yes_stake = question.total_yes_stake.checked_add(stake as u128).unwrap();
             question.total_yes_weight = question.total_yes_weight.checked_add(weight).unwrap();
+            question.yes_count = question.yes_count.checked_add(1).unwrap();
         } else {
             question.total_no_stake = question.total_no_stake.checked_add(stake as u128).unwrap();
             question.total_no_weight = question.total_no_weight.checked_add(weight).unwrap();
+            question.no_count = question.no_count.checked_add(1).unwrap();
         }
 
         self.answer.set_inner(Answer {

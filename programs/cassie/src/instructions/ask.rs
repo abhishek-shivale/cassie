@@ -1,7 +1,7 @@
 use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
 use crate::state::admin::OracleConfig;
 use crate::state::question::Question;
-use crate::CreateQuestion;
+use crate::{CreateQuestion, QuestionState};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -98,9 +98,12 @@ impl<'info> Ask<'info> {
             category,
             created_at,
             hash,
+            yes_count: 0,
+            no_count: 0,
             metadata_uri,
             callback_program,
             callback_discriminator,
+            state: QuestionState::Asked,
         });
 
         self.deposit_bounty(bounty)?;

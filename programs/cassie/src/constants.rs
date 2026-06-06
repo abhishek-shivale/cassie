@@ -18,6 +18,11 @@ pub const ANSWER_SEED: &str = "answer";
 #[constant]
 pub const REPUTATION_SEED: &str = "reputation";
 
+#[constant]
+pub const OUTCOME_SEED: &str = "outcome";
+
+pub const BPS_DENOMINATOR: u128 = 10_000;
+
 // fixed-point scale. SCALE = 1.0x
 pub const SCALE: u64 = 100;
 
@@ -32,6 +37,15 @@ pub const ACCURACY_MAX_MULT: u64 = 500;
 
 // loyalty adds up to +2.0x (so 1.0x..3.0x)
 pub const LOYALTY_MAX_MULT: u64 = 200;
+
+pub const GAIN: u64 = 10; // correct answer
+pub const LOSS: u64 = 20; // wrong answer (loss > gain on purpose)
+pub const DISPUTE_WIN_GAIN: u64 = 15;
+pub const DISPUTE_LOSS: u64 = 25;
+pub const COUNCIL_GAIN: u64 = 5;
+pub const COUNCIL_LOSS: u64 = 10;
+
+pub const SECONDS_PER_DAY: i64 = 86_400;
 
 // pub const USDC_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // mainnet
 pub const USDC_PUBKEY: Pubkey = pubkey!("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"); // devnet

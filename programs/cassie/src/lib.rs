@@ -33,9 +33,21 @@ pub mod cassie {
         council_size: u8,
     ) -> Result<()> {
         // check bps because we don't want admin to slash more than 100%
-        require_gte!(10000, divergence_bps, CassieError::MaxBpsReached);
-        require_gte!(10000, treasury_bps, CassieError::MaxBpsReached);
-        require_gte!(10000, slash_bps, CassieError::MaxBpsReached);
+        require_gte!(
+            BPS_DENOMINATOR as u64,
+            divergence_bps,
+            CassieError::MaxBpsReached
+        );
+        require_gte!(
+            BPS_DENOMINATOR as u64,
+            treasury_bps,
+            CassieError::MaxBpsReached
+        );
+        require_gte!(
+            BPS_DENOMINATOR as u64,
+            slash_bps,
+            CassieError::MaxBpsReached
+        );
 
         // its window check all in seconds
         require_gte!(default_dispute_window, 7200, CassieError::InvalidWindow);
@@ -128,6 +140,18 @@ pub mod cassie {
             CassieError::AnswerWindowClosed
         );
         require_eq!(stake, MIN_STAKE, CassieError::InsufficientStake);
+        require!(
+            matches!(
+                ctx.accounts.question.state,
+                QuestionState::Asked | QuestionState::Answering
+            ),
+            CassieError::InvalidState
+        );
+
         ctx.accounts.propose(stake, side, &ctx.bumps)
+    }
+
+    pub fn close_proposers(ctx: Context<CloseProposer>, _hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.close(&ctx.bumps)
     }
 }
