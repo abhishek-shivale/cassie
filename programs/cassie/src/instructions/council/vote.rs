@@ -90,6 +90,7 @@ impl<'info> Vote<'info> {
             member: self.voter.key(),
             vote,
             voted_at: now,
+            claimed: false,
             bump: bumps.council_vote,
         });
 

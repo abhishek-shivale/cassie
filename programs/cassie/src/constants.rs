@@ -6,7 +6,6 @@ pub const MAX_COUNCIL_MEMBER: usize = 9;
 pub const MIN_DISPUTE_BOND: u64 = 750;
 pub const MIN_STAKE: u64 = 750;
 
-// winning disputer's cut of the slashed pool (bps). e.g. 2500 = 25%
 pub const DISPUTE_REWARD_BPS: u64 = 2500;
 
 #[constant]
