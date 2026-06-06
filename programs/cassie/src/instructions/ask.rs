@@ -41,8 +41,10 @@ pub struct Ask<'info> {
     pub questioner_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
+        init,
+        payer = questioner,
         associated_token::mint = usdc_mint,
-        associated_token::authority = config,
+        associated_token::authority = question,
     )]
     pub bounty_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
 

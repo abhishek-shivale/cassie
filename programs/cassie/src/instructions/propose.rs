@@ -1,5 +1,5 @@
-use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
-use crate::{OracleConfig, Question};
+use crate::constants::*;
+use crate::{Answer, OracleConfig, Question, Reputation};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{
@@ -7,7 +7,7 @@ use anchor_spl::token_interface::{
 };
 
 #[derive(Accounts)]
-#[instruction(asker: Pubkey, hash: [u8; 32])]
+#[instruction(hash: [u8; 32])]
 pub struct Propose<'info> {
     #[account(mut)]
     pub proposer: Signer<'info>,
@@ -38,9 +38,27 @@ pub struct Propose<'info> {
 
     #[account(
         associated_token::mint = usdc_mint,
-        associated_token::authority = config,
+        associated_token::authority = question,
     )]
-    pub bond_ata: InterfaceAccount<'info, TokenAccount>,
+    pub bond_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
+
+    #[account(
+        init_if_needed,
+        payer = proposer,
+        space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
+        seeds = [REPUTATION_SEED.as_ref(), proposer.key().as_ref()],
+        bump
+    )]
+    pub reputation: Account<'info, Reputation>,
+
+    #[account(
+        init,
+        payer = proposer,
+        space = Answer::DISCRIMINATOR.len() + Answer::INIT_SPACE,
+        seeds = [ANSWER_SEED.as_ref(), hash.as_ref(), proposer.key().as_ref()],
+        bump
+    )]
+    pub answer: Account<'info, Answer>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
@@ -65,9 +83,36 @@ impl<'info> Propose<'info> {
         Ok(())
     }
 
-    pub fn propose(&mut self) -> Result<()> {
-        let ans = &mut self.question;
-        // ans.
+    pub fn propose(&mut self, stake: u64, side: bool, bump: &ProposeBumps) -> Result<()> {
+        // check if voter is new init or old
+        if self.reputation.voter == Pubkey::default() {
+            self.reputation.voter = self.proposer.key();
+            self.reputation.bump = bump.reputation;
+        }
+        // update question field
+        let question = &mut self.question;
+        let weight = self.reputation.calculate_weight(stake);
+        if side {
+            question.total_yes_stake = question.total_yes_stake.checked_add(stake as u128).unwrap();
+            question.total_yes_weight = question.total_yes_weight.checked_add(weight).unwrap();
+        } else {
+            question.total_yes_stake = question.total_no_stake.checked_add(stake as u128).unwrap();
+            question.total_yes_weight = question.total_no_weight.checked_add(weight).unwrap();
+        }
+
+        self.answer.set_inner(Answer {
+            answerer: self.proposer.key(),
+            side,
+            stake,
+            bump: bump.answer,
+            weight,
+            claimed: false,
+            rep_score_at_answer: self.reputation.score,
+            rep_days_at_answer: self.reputation.active_days,
+            submitted_at: Clock::get()?.unix_timestamp,
+        });
+
+        self.add_bond(stake)?;
 
         Ok(())
     }

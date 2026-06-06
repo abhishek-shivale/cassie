@@ -1,3 +1,5 @@
+use crate::aggregation::compute_weight;
+use crate::{ACCURACY_MAX_MULT, LOYALTY_MAX_MULT, MAX_DAYS, MAX_SCORE, SCALE};
 use anchor_lang::prelude::*;
 
 #[account]
@@ -41,4 +43,10 @@ pub struct Reputation {
     pub last_updated: i64,
     // bump for the config
     pub bump: u8,
+}
+
+impl Reputation {
+    pub fn calculate_weight(&self, stake: u64) -> u128 {
+        compute_weight(stake, self.score, self.active_days)
+    }
 }

@@ -1,3 +1,4 @@
+mod aggregation;
 pub mod constants;
 pub mod error;
 pub mod events;
@@ -80,8 +81,16 @@ pub mod cassie {
 
     pub fn update_council(ctx: Context<UpdateCouncil>, old: Pubkey, new: Pubkey) -> Result<()> {
         // this we compare and if new or old are zero pubkey it will throw error
-        require_keys_neq!(new, Pubkey::default(), CassieError::CouncilMemberShouldNotBeZero);
-        require_keys_neq!(old, Pubkey::default(), CassieError::CouncilMemberShouldNotBeZero);
+        require_keys_neq!(
+            new,
+            Pubkey::default(),
+            CassieError::CouncilMemberShouldNotBeZero
+        );
+        require_keys_neq!(
+            old,
+            Pubkey::default(),
+            CassieError::CouncilMemberShouldNotBeZero
+        );
 
         ctx.accounts.update_council(old, new)
     }
@@ -95,7 +104,11 @@ pub mod cassie {
         callback_program: Pubkey,
         callback_discriminator: [u8; 8],
     ) -> Result<()> {
-        require_gte!(bounty, ctx.accounts.config.min_bounty, CassieError::InsufficientBounty);
+        require_gte!(
+            bounty,
+            ctx.accounts.config.min_bounty,
+            CassieError::InsufficientBounty
+        );
         require!(!ctx.accounts.config.freeze, CassieError::ProgramFrozen);
         ctx.accounts.ask_question(
             hash,
@@ -108,7 +121,13 @@ pub mod cassie {
         )
     }
 
-    // pub fn answer(ctx: Context<Answer>) -> Result<()> {
-    //
-    // }
+    pub fn propose(ctx: Context<Propose>, _hash: [u8; 32], stake: u64, side: bool) -> Result<()> {
+        require!(!ctx.accounts.config.freeze, CassieError::ProgramFrozen);
+        require!(
+            Clock::get()?.unix_timestamp < ctx.accounts.question.answer_deadline,
+            CassieError::AnswerWindowClosed
+        );
+        require_eq!(stake, MIN_STAKE, CassieError::InsufficientStake);
+        ctx.accounts.propose(stake, side, &ctx.bumps)
+    }
 }

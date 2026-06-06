@@ -49,5 +49,5 @@ pub enum CassieError {
     #[msg("council member should not be zero.")]
     CouncilMemberShouldNotBeZero,
     #[msg("Program frozen.")]
-    ProgramFrozen
+    ProgramFrozen,
 }
