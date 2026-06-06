@@ -1,32 +1,85 @@
-//
-// use {
-//     anchor_lang::{solana_program::instruction::Instruction, InstructionData, ToAccountMetas},
-//     litesvm::LiteSVM,
-//     solana_message::{Message, VersionedMessage},
-//     solana_signer::Signer,
-//     solana_keypair::Keypair,
-//     solana_transaction::versioned::VersionedTransaction,
-// };
-//
-// #[test]
-// fn test_initialize() {
-//     let program_id = cassie::id();
-//     let payer = Keypair::new();
-//     let mut svm = LiteSVM::new();
-//     let bytes = include_bytes!("../../../target/deploy/cassie.so");
-//     svm.add_program(program_id, bytes).unwrap();
-//     svm.airdrop(&payer.pubkey(), 1_000_000_000).unwrap();
-//
-//     let instruction = Instruction::new_with_bytes(
-//         program_id,
-//         &cassie::instruction::Initialize {}.data(),
-//         cassie::accounts::Initialize {}.to_account_metas(None),
-//     );
-//
-//     let blockhash = svm.latest_blockhash();
-//     let msg = Message::new_with_blockhash(&[instruction], Some(&payer.pubkey()), &blockhash);
-//     let tx = VersionedTransaction::try_new(VersionedMessage::Legacy(msg), &[payer]).unwrap();
-//
-//     let res = svm.send_transaction(tx);
-//     assert!(res.is_ok());
-// }
+mod helper;
+
+use anchor_lang::AccountDeserialize;
+use cassie::state::admin::OracleConfig;
+use helper::initialize::{config_pda, init_config, InitParams, COUNCIL_SIZE};
+use helper::utils::setup_svm;
+use solana_signer::Signer;
+
+// happy path: valid params create the config PDA and persist every field.
+#[test]
+fn initialize_config_ok() {
+    let (mut svm, admin) = setup_svm();
+    let params = InitParams::default();
+
+    let res = init_config(&mut svm, &admin, &params);
+    assert!(res.is_ok(), "init should succeed: {:?}", res.err());
+
+    // read back the PDA and decode the OracleConfig account.
+    let raw = svm.get_account(&config_pda()).expect("config not created");
+    let config = OracleConfig::try_deserialize(&mut raw.data.as_slice()).unwrap();
+
+    assert_eq!(config.admin, admin.pubkey());
+    assert_eq!(config.council_size, COUNCIL_SIZE);
+    // quorum is derived as floor(size * 2 / 3).
+    assert_eq!(config.quorum, (COUNCIL_SIZE * 2) / 3);
+    assert!(!config.freeze);
+}
+
+// divergence_bps above 100% (10_000) must trip MaxBpsReached.
+#[test]
+fn initialize_config_divergence_bps_too_high() {
+    let (mut svm, admin) = setup_svm();
+    let params = InitParams {
+        divergence_bps: 10_001,
+        ..Default::default()
+    };
+
+    assert!(init_config(&mut svm, &admin, &params).is_err());
+}
+
+// dispute window below the 7200s floor must trip InvalidWindow.
+#[test]
+fn initialize_config_dispute_window_too_small() {
+    let (mut svm, admin) = setup_svm();
+    let params = InitParams {
+        default_dispute_window: 7199,
+        ..Default::default()
+    };
+
+    assert!(init_config(&mut svm, &admin, &params).is_err());
+}
+
+// council_size of zero must trip CouncilMemberShouldNotBeZero.
+#[test]
+fn initialize_config_council_size_zero() {
+    let (mut svm, admin) = setup_svm();
+    let params = InitParams {
+        council_size: 0,
+        ..Default::default()
+    };
+
+    assert!(init_config(&mut svm, &admin, &params).is_err());
+}
+
+// min_bounty below 10 must trip BountySizeCanNotBeLower.
+#[test]
+fn initialize_config_bounty_too_low() {
+    let (mut svm, admin) = setup_svm();
+    let params = InitParams {
+        min_bounty: 9,
+        ..Default::default()
+    };
+
+    assert!(init_config(&mut svm, &admin, &params).is_err());
+}
+
+// initializing twice on the same PDA must fail (account already exists).
+#[test]
+fn initialize_config_twice_fails() {
+    let (mut svm, admin) = setup_svm();
+    let params = InitParams::default();
+
+    assert!(init_config(&mut svm, &admin, &params).is_ok());
+    assert!(init_config(&mut svm, &admin, &params).is_err());
+}
