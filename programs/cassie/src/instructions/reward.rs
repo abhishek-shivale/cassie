@@ -20,60 +20,60 @@ pub struct ClaimReward<'info> {
         seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
         bump = question.bump,
     )]
-    pub question: Account<'info, Question>,
+    pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
         bump = config.bump,
     )]
-    pub config: Account<'info, OracleConfig>,
+    pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
         seeds = [OUTCOME_SEED.as_ref(), hash.as_ref()],
         bump = outcome.bump,
     )]
-    pub outcome: Account<'info, Outcome>,
+    pub outcome: Box<Account<'info, Outcome>>,
 
     #[account(
         mut,
         seeds = [ANSWER_SEED.as_ref(), hash.as_ref(), claimer.key().as_ref()],
         bump = answer.bump,
     )]
-    pub answer: Option<Account<'info, Answer>>,
-    
+    pub answer: Option<Box<Account<'info, Answer>>>,
+
     #[account(
         mut,
         seeds = [DISPUTE_SEED.as_ref(), hash.as_ref()],
         bump = dispute.bump,
         constraint = dispute.disputer == claimer.key() @ CassieError::UnauthorizedAdmin,
     )]
-    pub dispute: Option<Account<'info, DisputeConfig>>,
+    pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
     #[account(
         mut,
         seeds = [REPUTATION_SEED.as_ref(), claimer.key().as_ref()],
         bump = reputation.bump,
     )]
-    pub reputation: Account<'info, Reputation>,
+    pub reputation: Box<Account<'info, Reputation>>,
 
     #[account(
         address = USDC_PUBKEY
     )]
-    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = question,
     )]
-    pub pool_ata: InterfaceAccount<'info, TokenAccount>,
+    pub pool_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = claimer,
     )]
-    pub claimer_ata: InterfaceAccount<'info, TokenAccount>,
+    pub claimer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
 }

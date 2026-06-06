@@ -18,30 +18,30 @@ pub struct Propose<'info> {
          seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
         bump = question.bump
     )]
-    pub question: Account<'info, Question>,
+    pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
         bump = config.bump,
     )]
-    pub config: Account<'info, OracleConfig>,
+    pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
         address = USDC_PUBKEY,
     )]
-    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         associated_token::mint = usdc_mint,
         associated_token::authority = proposer,
     )]
-    pub proposer_ata: InterfaceAccount<'info, TokenAccount>,
+    pub proposer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         associated_token::mint = usdc_mint,
         associated_token::authority = question,
     )]
-    pub bond_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
+    pub bond_ata: Box<InterfaceAccount<'info, TokenAccount>>, // reward pool
 
     #[account(
         init_if_needed,
@@ -50,7 +50,7 @@ pub struct Propose<'info> {
         seeds = [REPUTATION_SEED.as_ref(), proposer.key().as_ref()],
         bump
     )]
-    pub reputation: Account<'info, Reputation>,
+    pub reputation: Box<Account<'info, Reputation>>,
 
     #[account(
         init,
@@ -59,7 +59,7 @@ pub struct Propose<'info> {
         seeds = [ANSWER_SEED.as_ref(), hash.as_ref(), proposer.key().as_ref()],
         bump
     )]
-    pub answer: Account<'info, Answer>,
+    pub answer: Box<Account<'info, Answer>>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,

@@ -19,7 +19,7 @@ pub struct Ask<'info> {
         seeds = [ADMIN_CONFIG_SEED.as_ref()],
         bump = config.bump,
     )]
-    pub config: Account<'info, OracleConfig>,
+    pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
         init,
@@ -28,18 +28,19 @@ pub struct Ask<'info> {
         seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
         bump
     )]
-    pub question: Account<'info, Question>,
+    pub question: Box<Account<'info, Question>>,
 
     #[account(
         address = USDC_PUBKEY
     )]
-    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
+        mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = questioner,
     )]
-    pub questioner_ata: InterfaceAccount<'info, TokenAccount>,
+    pub questioner_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init,
@@ -47,7 +48,7 @@ pub struct Ask<'info> {
         associated_token::mint = usdc_mint,
         associated_token::authority = question,
     )]
-    pub bounty_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
+    pub bounty_ata: Box<InterfaceAccount<'info, TokenAccount>>, // reward pool
 
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,

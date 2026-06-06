@@ -34,6 +34,7 @@ solana-account = "3.2.0"
 solana-program-option = "3.0"
 solana-program-pack = "3.0"
 spl-token-interface = "2.0.0"
+spl-associated-token-account-interface = "2.0.0"
 
 
 [lints.rust]
