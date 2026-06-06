@@ -169,4 +169,12 @@ pub mod cassie {
             ctx.bumps.disputer_config,
         )
     }
+
+    pub fn council_vote(ctx: Context<Vote>, _hash: [u8; 32], vote: bool) -> Result<()> {
+        ctx.accounts.vote(vote, &ctx.bumps)
+    }
+
+    pub fn finalize_council(ctx: Context<Finalize>, _hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.finalize()
+    }
 }

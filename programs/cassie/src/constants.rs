@@ -22,6 +22,12 @@ pub const REPUTATION_SEED: &str = "reputation";
 pub const OUTCOME_SEED: &str = "outcome";
 
 #[constant]
+pub const COUNCIL_TOTAL_SEED: &str = "council_total";
+
+#[constant]
+pub const COUNCIL_VOTE_SEED: &str = "council_vote";
+
+#[constant]
 pub const DISPUTE_SEED: &str = "dispute";
 
 pub const BPS_DENOMINATOR: u128 = 10_000;
