@@ -17,7 +17,7 @@ pub struct Dispute<'info> {
 
     #[account(
         mut,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
     pub question: Box<Account<'info, Question>>,
@@ -42,13 +42,13 @@ pub struct Dispute<'info> {
     pub bond_ata: Box<InterfaceAccount<'info, TokenAccount>>, // reward pool
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
-        seeds = [OUTCOME_SEED.as_ref(), hash.as_ref()],
+        seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
         bump = outcome.bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
@@ -57,7 +57,7 @@ pub struct Dispute<'info> {
         init,
         payer = disputer,
         space = DisputeConfig::DISCRIMINATOR.len() + DisputeConfig::INIT_SPACE,
-        seeds = [DISPUTE_SEED.as_ref(), hash.as_ref()],
+        seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
         bump
     )]
     pub disputer_config: Box<Account<'info, DisputeConfig>>,
@@ -66,7 +66,7 @@ pub struct Dispute<'info> {
         init_if_needed,
         payer = disputer,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
-        seeds = [REPUTATION_SEED.as_ref(), disputer.key().as_ref()],
+        seeds = [REPUTATION_SEED.as_bytes(), disputer.key().as_ref()],
         bump
     )]
     pub reputation: Box<Account<'info, Reputation>>,

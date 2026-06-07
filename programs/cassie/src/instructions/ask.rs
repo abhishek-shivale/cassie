@@ -16,7 +16,7 @@ pub struct Ask<'info> {
     pub questioner: Signer<'info>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
@@ -25,7 +25,7 @@ pub struct Ask<'info> {
         init,
         payer = questioner,
         space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump
     )]
     pub question: Box<Account<'info, Question>>,

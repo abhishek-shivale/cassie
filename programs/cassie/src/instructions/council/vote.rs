@@ -11,13 +11,13 @@ pub struct Vote<'info> {
 
     #[account(
         mut,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
     pub question: Account<'info, Question>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Account<'info, OracleConfig>,
@@ -27,7 +27,7 @@ pub struct Vote<'info> {
         init_if_needed,
         payer = voter,
         space = CouncilTotal::DISCRIMINATOR.len() + CouncilTotal::INIT_SPACE,
-        seeds = [COUNCIL_TOTAL_SEED.as_ref(), hash.as_ref()],
+        seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
         bump
     )]
     pub council_total: Account<'info, CouncilTotal>,
@@ -37,7 +37,7 @@ pub struct Vote<'info> {
         init,
         payer = voter,
         space = CouncilVote::DISCRIMINATOR.len() + CouncilVote::INIT_SPACE,
-        seeds = [COUNCIL_VOTE_SEED.as_ref(), hash.as_ref(), voter.key().as_ref()],
+        seeds = [COUNCIL_VOTE_SEED.as_bytes(), hash.as_ref(), voter.key().as_ref()],
         bump
     )]
     pub council_vote: Account<'info, CouncilVote>,

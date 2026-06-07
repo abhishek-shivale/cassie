@@ -15,19 +15,19 @@ pub struct Settle<'info> {
 
     #[account(
         mut,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
-        seeds = [OUTCOME_SEED.as_ref(), hash.as_ref()],
+        seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
         bump = outcome.bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
@@ -55,7 +55,7 @@ pub struct Settle<'info> {
     // present only if the question was disputed. settle marks won/lost here.
     #[account(
         mut,
-        seeds = [DISPUTE_SEED.as_ref(), hash.as_ref()],
+        seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
         bump = dispute.bump,
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
@@ -127,7 +127,7 @@ impl<'info> Settle<'info> {
 
         if split.treasury_cut > 0 {
             let bump = [self.question.bump];
-            let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref(), &bump];
+            let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
             transfer_checked(
                 CpiContext::new_with_signer(
                     self.token_program.key(),

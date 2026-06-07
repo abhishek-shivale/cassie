@@ -15,13 +15,13 @@ pub struct Propose<'info> {
 
     #[account(
         mut,
-         seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
@@ -49,7 +49,7 @@ pub struct Propose<'info> {
         init_if_needed,
         payer = proposer,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
-        seeds = [REPUTATION_SEED.as_ref(), proposer.key().as_ref()],
+        seeds = [REPUTATION_SEED.as_bytes(), proposer.key().as_ref()],
         bump
     )]
     pub reputation: Box<Account<'info, Reputation>>,
@@ -58,7 +58,7 @@ pub struct Propose<'info> {
         init,
         payer = proposer,
         space = Answer::DISCRIMINATOR.len() + Answer::INIT_SPACE,
-        seeds = [ANSWER_SEED.as_ref(), hash.as_ref(), proposer.key().as_ref()],
+        seeds = [ANSWER_SEED.as_bytes(), hash.as_ref(), proposer.key().as_ref()],
         bump
     )]
     pub answer: Box<Account<'info, Answer>>,

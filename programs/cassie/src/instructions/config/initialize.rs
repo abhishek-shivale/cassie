@@ -12,7 +12,7 @@ pub struct InitializeConfig<'info> {
     #[account(
         init,
         payer = admin,
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         space= OracleConfig::DISCRIMINATOR.len() + OracleConfig::INIT_SPACE,
         bump,
     )]

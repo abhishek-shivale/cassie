@@ -17,33 +17,33 @@ pub struct ClaimReward<'info> {
     pub claimer: Signer<'info>,
 
     #[account(
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
-        seeds = [OUTCOME_SEED.as_ref(), hash.as_ref()],
+        seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
         bump = outcome.bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
 
     #[account(
         mut,
-        seeds = [ANSWER_SEED.as_ref(), hash.as_ref(), claimer.key().as_ref()],
+        seeds = [ANSWER_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
         bump = answer.bump,
     )]
     pub answer: Option<Box<Account<'info, Answer>>>,
 
     #[account(
         mut,
-        seeds = [DISPUTE_SEED.as_ref(), hash.as_ref()],
+        seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
         bump = dispute.bump,
         constraint = dispute.disputer == claimer.key() @ CassieError::UnauthorizedAdmin,
     )]
@@ -51,7 +51,7 @@ pub struct ClaimReward<'info> {
 
     #[account(
         mut,
-        seeds = [REPUTATION_SEED.as_ref(), claimer.key().as_ref()],
+        seeds = [REPUTATION_SEED.as_bytes(), claimer.key().as_ref()],
         bump = reputation.bump,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
@@ -169,7 +169,7 @@ impl<'info> ClaimReward<'info> {
 
     fn transfer_payout(&self, hash: [u8; 32], amount: u64) -> Result<()> {
         let bump = [self.question.bump];
-        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref(), &bump];
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
         transfer_checked(
             CpiContext::new_with_signer(
                 self.token_program.key(),
