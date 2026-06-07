@@ -69,7 +69,12 @@ pub fn treasury_ata(treasury: Pubkey) -> Pubkey {
     ata(treasury, USDC_PUBKEY)
 }
 
-pub fn settle_ix(cranker: Pubkey, treasury: Pubkey, hash: &[u8; 32]) -> Instruction {
+fn settle_ix_inner(
+    cranker: Pubkey,
+    treasury: Pubkey,
+    hash: &[u8; 32],
+    dispute: Option<Pubkey>,
+) -> Instruction {
     let data = cassie::instruction::SettleQuestion { hash: *hash }.data();
 
     let accounts = cassie::accounts::Settle {
@@ -80,7 +85,7 @@ pub fn settle_ix(cranker: Pubkey, treasury: Pubkey, hash: &[u8; 32]) -> Instruct
         usdc_mint: USDC_PUBKEY,
         pool_ata: bounty_ata(hash),
         treasury_ata: treasury_ata(treasury),
-        dispute: None,
+        dispute,
         token_program: TOKEN_PROGRAM_ID,
     }
     .to_account_metas(None);
@@ -92,6 +97,10 @@ pub fn settle_ix(cranker: Pubkey, treasury: Pubkey, hash: &[u8; 32]) -> Instruct
     }
 }
 
+pub fn settle_ix(cranker: Pubkey, treasury: Pubkey, hash: &[u8; 32]) -> Instruction {
+    settle_ix_inner(cranker, treasury, hash, None)
+}
+
 pub fn settle(
     svm: &mut LiteSVM,
     cranker: &Keypair,
@@ -99,6 +108,18 @@ pub fn settle(
     hash: &[u8; 32],
 ) -> TransactionResult {
     let ix = settle_ix(cranker.pubkey(), treasury, hash);
+    send_ix(svm, ix, cranker, &[cranker])
+}
+
+// settle a question that was disputed: passes the dispute PDA so settle can mark
+// the dispute won/lost and compute its reward.
+pub fn settle_disputed(
+    svm: &mut LiteSVM,
+    cranker: &Keypair,
+    treasury: Pubkey,
+    hash: &[u8; 32],
+) -> TransactionResult {
+    let ix = settle_ix_inner(cranker.pubkey(), treasury, hash, Some(crate::helper::dispute::dispute_pda(hash)));
     send_ix(svm, ix, cranker, &[cranker])
 }
 

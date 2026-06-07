@@ -80,7 +80,12 @@ pub fn setup_resolved_winner() -> (LiteSVM, Keypair, Keypair, [u8; 32]) {
     (svm, admin, winner, hash)
 }
 
-pub fn claim_ix(claimer: Pubkey, hash: &[u8; 32]) -> Instruction {
+fn claim_ix_inner(
+    claimer: Pubkey,
+    hash: &[u8; 32],
+    answer: Option<Pubkey>,
+    dispute: Option<Pubkey>,
+) -> Instruction {
     let data = cassie::instruction::ClaimReward { hash: *hash }.data();
 
     let accounts = cassie::accounts::ClaimReward {
@@ -88,8 +93,8 @@ pub fn claim_ix(claimer: Pubkey, hash: &[u8; 32]) -> Instruction {
         question: question_pda(hash),
         config: config_pda(),
         outcome: outcome_pda(hash),
-        answer: Some(answer_pda(hash, claimer)),
-        dispute: None,
+        answer,
+        dispute,
         reputation: reputation_pda(claimer),
         usdc_mint: USDC_PUBKEY,
         pool_ata: bounty_ata(hash),
@@ -105,7 +110,27 @@ pub fn claim_ix(claimer: Pubkey, hash: &[u8; 32]) -> Instruction {
     }
 }
 
+pub fn claim_ix(claimer: Pubkey, hash: &[u8; 32]) -> Instruction {
+    claim_ix_inner(claimer, hash, Some(answer_pda(hash, claimer)), None)
+}
+
+// claim an answer payout (no dispute account).
 pub fn claim(svm: &mut LiteSVM, claimer: &Keypair, hash: &[u8; 32]) -> TransactionResult {
     let ix = claim_ix(claimer.pubkey(), hash);
+    send_ix(svm, ix, claimer, &[claimer])
+}
+
+// claim only a dispute payout (claimer never answered, just disputed).
+pub fn claim_dispute_only(
+    svm: &mut LiteSVM,
+    claimer: &Keypair,
+    hash: &[u8; 32],
+) -> TransactionResult {
+    let ix = claim_ix_inner(
+        claimer.pubkey(),
+        hash,
+        None,
+        Some(crate::helper::dispute::dispute_pda(hash)),
+    );
     send_ix(svm, ix, claimer, &[claimer])
 }
