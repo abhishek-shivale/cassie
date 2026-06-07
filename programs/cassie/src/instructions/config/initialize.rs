@@ -62,6 +62,19 @@ impl<'info> InitializeConfig<'info> {
         // bounty floor
         require!(min_bounty >= 10, CassieError::BountySizeCanNotBeLower);
 
+        // active council slots must be non-zero and unique.
+        let active = council_size as usize;
+        for i in 0..active {
+            require_keys_neq!(
+                council[i],
+                Pubkey::default(),
+                CassieError::CouncilMemberShouldNotBeZero
+            );
+            for j in (i + 1)..active {
+                require_keys_neq!(council[i], council[j], CassieError::DuplicateCouncilMember);
+            }
+        }
+
         let quorum = council_size.checked_mul(2).unwrap().checked_div(3).unwrap();
         self.config.set_inner(OracleConfig {
             admin: self.admin.key(),

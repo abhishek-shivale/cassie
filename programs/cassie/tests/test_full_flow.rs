@@ -292,3 +292,33 @@ fn flow_dispute_lost_full_lifecycle() {
     claim(&mut svm, &answerer, &hash).unwrap();
     assert_eq!(usdc(&svm, answerer.pubkey()), a_before + 1740);
 }
+
+// =============================================================================
+// Regression: a disputed question must carry its dispute account into settle.
+// Plain settle (no dispute account) must fail once has_dispute is set.
+// =============================================================================
+#[test]
+fn flow_disputed_settle_requires_dispute_account() {
+    let (mut svm, admin, council, treasury) = init_full(3);
+    let hash = AskParams::default().hash;
+
+    ask(&mut svm, &admin, &AskParams::default()).unwrap();
+    let answerer = fund_proposer(&mut svm);
+    propose(&mut svm, &answerer, &yes(hash)).unwrap();
+    warp_past_answer_window(&mut svm, &hash);
+    close(&mut svm, &admin, &hash).unwrap();
+
+    let disputer = fund_disputer(&mut svm);
+    dispute(&mut svm, &disputer, &dispute_params(hash)).unwrap();
+
+    vote(&mut svm, &council[0], &hash, false).unwrap();
+    vote(&mut svm, &council[1], &hash, false).unwrap();
+    vote(&mut svm, &council[2], &hash, true).unwrap();
+    finalize(&mut svm, &admin, &hash).unwrap();
+    warp_past_dispute_window(&mut svm, &hash);
+
+    // plain settle omits the dispute account -> MissingDisputeAccount.
+    assert!(settle(&mut svm, &admin, treasury, &hash).is_err());
+    // with the dispute account, settlement proceeds.
+    assert!(settle_disputed(&mut svm, &admin, treasury, &hash).is_ok());
+}

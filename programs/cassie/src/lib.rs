@@ -118,8 +118,12 @@ pub mod cassie {
         ctx.accounts.finalize()
     }
 
-    pub fn settle_question(ctx: Context<Settle>, hash: [u8; 32]) -> Result<()> {
-        ctx.accounts.settle(hash)
+    pub fn settle_question<'info>(
+        ctx: Context<'info, Settle<'info>>,
+        hash: [u8; 32],
+    ) -> Result<()> {
+        ctx.accounts.settle(hash)?;
+        ctx.accounts.fire_callback(ctx.remaining_accounts)
     }
 
     pub fn claim_reward(ctx: Context<ClaimReward>, hash: [u8; 32]) -> Result<()> {

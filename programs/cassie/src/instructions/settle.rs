@@ -3,6 +3,8 @@ use crate::constants::*;
 use crate::error::CassieError;
 use crate::{DisputeConfig, OracleConfig, Outcome, Question, QuestionSettled, QuestionState};
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
+use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token_interface::{
     transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
 };
@@ -60,6 +62,8 @@ pub struct Settle<'info> {
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
+    pub callback_program: Option<UncheckedAccount<'info>>,
+
     pub token_program: Interface<'info, TokenInterface>,
 }
 
@@ -73,6 +77,12 @@ impl<'info> Settle<'info> {
         require!(
             Clock::get()?.unix_timestamp > self.question.dispute_deadline,
             CassieError::DisputeWindowActive
+        );
+        // a disputed question must be settled with its dispute account, so the
+        // dispute is resolved and its bond/slash share is accounted for.
+        require!(
+            !self.question.has_dispute || self.dispute.is_some(),
+            CassieError::MissingDisputeAccount
         );
 
         let result = self.outcome.result;
@@ -144,5 +154,49 @@ impl<'info> Settle<'info> {
             )?;
         }
         Ok(split)
+    }
+
+    pub fn fire_callback(&self, remaining: &[AccountInfo<'info>]) -> Result<()> {
+        let target = self.question.callback_program;
+        if target == Pubkey::default() {
+            return Ok(());
+        }
+
+        let hash = self.question.hash;
+        let program_ai = self
+            .callback_program
+            .as_ref()
+            .ok_or(CassieError::CallbackInvocationFailed)?;
+        require_keys_eq!(program_ai.key(), target, CassieError::CallbackInvocationFailed);
+
+        let mut data = Vec::with_capacity(8 + 32 + 1);
+        data.extend_from_slice(&self.question.callback_discriminator);
+        data.extend_from_slice(&hash);
+        data.push(self.outcome.result as u8);
+
+        let metas: Vec<AccountMeta> = remaining
+            .iter()
+            .map(|a| AccountMeta {
+                pubkey: a.key(),
+                is_signer: a.is_signer,
+                is_writable: a.is_writable,
+            })
+            .collect();
+
+        let ix = Instruction {
+            program_id: target,
+            accounts: metas,
+            data,
+        };
+
+        let bump = [self.question.bump];
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
+
+        let mut infos: Vec<AccountInfo> = Vec::with_capacity(1 + remaining.len());
+        infos.push(program_ai.to_account_info());
+        infos.extend_from_slice(remaining);
+
+        invoke_signed(&ix, &infos, &[seeds]).map_err(|_| CassieError::CallbackInvocationFailed)?;
+        Ok(())
     }
 }

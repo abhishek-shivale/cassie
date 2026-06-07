@@ -107,6 +107,7 @@ impl<'info> Dispute<'info> {
         let question = &mut self.question;
         question.state = QuestionState::Escalated;
         question.escalated = true;
+        question.has_dispute = true;
 
         self.disputer_config.set_inner(DisputeConfig {
             disputer: self.disputer.key(),

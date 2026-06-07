@@ -69,11 +69,30 @@ pub fn treasury_ata(treasury: Pubkey) -> Pubkey {
     ata(treasury, USDC_PUBKEY)
 }
 
+pub const MEMO_PROGRAM_ID: Pubkey =
+    Pubkey::from_str_const("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+
+pub fn setup_resolved_with_callback(discriminator: [u8; 8]) -> (LiteSVM, Keypair, Pubkey, [u8; 32]) {
+    let (mut svm, admin, treasury) = init_with_treasury();
+    let ask_params = AskParams {
+        callback_program: MEMO_PROGRAM_ID,
+        callback_discriminator: discriminator,
+        ..Default::default()
+    };
+    let hash = ask_params.hash;
+    ask(&mut svm, &admin, &ask_params).unwrap();
+    propose_side(&mut svm, &hash, true);
+    warp_past_answer_window(&mut svm, &hash);
+    close(&mut svm, &admin, &hash).unwrap();
+    (svm, admin, treasury, hash)
+}
+
 fn settle_ix_inner(
     cranker: Pubkey,
     treasury: Pubkey,
     hash: &[u8; 32],
     dispute: Option<Pubkey>,
+    callback_program: Option<Pubkey>,
 ) -> Instruction {
     let data = cassie::instruction::SettleQuestion { hash: *hash }.data();
 
@@ -86,6 +105,7 @@ fn settle_ix_inner(
         pool_ata: bounty_ata(hash),
         treasury_ata: treasury_ata(treasury),
         dispute,
+        callback_program,
         token_program: TOKEN_PROGRAM_ID,
     }
     .to_account_metas(None);
@@ -98,7 +118,7 @@ fn settle_ix_inner(
 }
 
 pub fn settle_ix(cranker: Pubkey, treasury: Pubkey, hash: &[u8; 32]) -> Instruction {
-    settle_ix_inner(cranker, treasury, hash, None)
+    settle_ix_inner(cranker, treasury, hash, None, None)
 }
 
 pub fn settle(
@@ -119,7 +139,25 @@ pub fn settle_disputed(
     treasury: Pubkey,
     hash: &[u8; 32],
 ) -> TransactionResult {
-    let ix = settle_ix_inner(cranker.pubkey(), treasury, hash, Some(crate::helper::dispute::dispute_pda(hash)));
+    let ix = settle_ix_inner(
+        cranker.pubkey(),
+        treasury,
+        hash,
+        Some(crate::helper::dispute::dispute_pda(hash)),
+        None,
+    );
+    send_ix(svm, ix, cranker, &[cranker])
+}
+
+// settle and fire the consumer callback CPI into `callback_program`.
+pub fn settle_with_callback(
+    svm: &mut LiteSVM,
+    cranker: &Keypair,
+    treasury: Pubkey,
+    hash: &[u8; 32],
+    callback_program: Pubkey,
+) -> TransactionResult {
+    let ix = settle_ix_inner(cranker.pubkey(), treasury, hash, None, Some(callback_program));
     send_ix(svm, ix, cranker, &[cranker])
 }
 

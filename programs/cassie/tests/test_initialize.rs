@@ -1,5 +1,6 @@
 mod helper;
 
+use anchor_lang::prelude::Pubkey;
 use anchor_lang::AccountDeserialize;
 use cassie::state::admin::OracleConfig;
 use helper::initialize::{config_pda, init_config, InitParams, COUNCIL_SIZE};
@@ -47,6 +48,39 @@ fn initialize_config_dispute_window_too_small() {
         ..Default::default()
     };
 
+    assert!(init_config(&mut svm, &admin, &params).is_err());
+}
+
+// a duplicate council member in the active range must trip DuplicateCouncilMember.
+#[test]
+fn initialize_config_duplicate_council() {
+    let (mut svm, admin) = setup_svm();
+    let dup = Pubkey::new_unique();
+    let mut council = [Pubkey::default(); 9];
+    council[0] = dup;
+    council[1] = dup; // duplicate
+    council[2] = Pubkey::new_unique();
+    let params = InitParams {
+        council,
+        council_size: 3,
+        ..Default::default()
+    };
+    assert!(init_config(&mut svm, &admin, &params).is_err());
+}
+
+// a zero pubkey in an active council slot must trip CouncilMemberShouldNotBeZero.
+#[test]
+fn initialize_config_zero_council_member() {
+    let (mut svm, admin) = setup_svm();
+    let mut council = [Pubkey::default(); 9];
+    council[0] = Pubkey::new_unique();
+    // slot 1 left as the zero pubkey while still inside council_size.
+    council[2] = Pubkey::new_unique();
+    let params = InitParams {
+        council,
+        council_size: 3,
+        ..Default::default()
+    };
     assert!(init_config(&mut svm, &admin, &params).is_err());
 }
 
