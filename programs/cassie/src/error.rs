@@ -56,4 +56,6 @@ pub enum CassieError {
     ProgramFrozen,
     #[msg("Invalid claimed dispute outcome.")]
     InvalidDisputeOutcome,
+    #[msg("Disputed question must be settled with its dispute account.")]
+    MissingDisputeAccount,
 }

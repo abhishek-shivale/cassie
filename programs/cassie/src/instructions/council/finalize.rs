@@ -14,27 +14,27 @@ pub struct Finalize<'info> {
 
     #[account(
         mut,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
     pub question: Account<'info, Question>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Account<'info, OracleConfig>,
 
     #[account(
         mut,
-        seeds = [COUNCIL_TOTAL_SEED.as_ref(), hash.as_ref()],
+        seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
         bump = council_total.bump,
     )]
     pub council_total: Account<'info, CouncilTotal>,
 
     #[account(
         mut,
-        seeds = [OUTCOME_SEED.as_ref(), hash.as_ref()],
+        seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
         bump = outcome.bump,
     )]
     pub outcome: Account<'info, Outcome>,

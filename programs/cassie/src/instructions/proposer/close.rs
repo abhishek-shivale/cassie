@@ -11,13 +11,13 @@ pub struct CloseProposer<'info> {
 
     #[account(
         mut,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
     pub question: Account<'info, Question>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
     pub config: Account<'info, OracleConfig>,
@@ -27,7 +27,7 @@ pub struct CloseProposer<'info> {
         init,
         payer = cranker,
         space = Outcome::DISCRIMINATOR.len() + Outcome::INIT_SPACE,
-        seeds = [OUTCOME_SEED.as_ref(), hash.as_ref()],
+        seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
         bump
     )]
     pub outcome: Account<'info, Outcome>,

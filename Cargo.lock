@@ -809,10 +809,15 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "litesvm",
+ "solana-account",
  "solana-keypair",
  "solana-message",
+ "solana-program-option",
+ "solana-program-pack",
  "solana-signer",
  "solana-transaction",
+ "spl-associated-token-account-interface",
+ "spl-token-interface",
 ]
 
 [[package]]

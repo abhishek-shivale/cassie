@@ -9,7 +9,7 @@ pub struct UpdateConfig<'info> {
     pub admin: Signer<'info>,
     #[account(
         mut,
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
         has_one = admin @ CassieError::UnauthorizedAdmin,
     )]

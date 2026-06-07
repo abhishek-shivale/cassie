@@ -17,59 +17,59 @@ pub struct Dispute<'info> {
 
     #[account(
         mut,
-        seeds = [QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()],
+        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
-    pub question: Account<'info, Question>,
+    pub question: Box<Account<'info, Question>>,
 
     #[account(
         address = USDC_PUBKEY
     )]
-    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = disputer,
     )]
-    pub disputer_ata: InterfaceAccount<'info, TokenAccount>,
+    pub disputer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = question,
     )]
-    pub bond_ata: InterfaceAccount<'info, TokenAccount>, // reward pool
+    pub bond_ata: Box<InterfaceAccount<'info, TokenAccount>>, // reward pool
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_ref()],
+        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
-    pub config: Account<'info, OracleConfig>,
+    pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
-        seeds = [OUTCOME_SEED.as_ref(), hash.as_ref()],
+        seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
         bump = outcome.bump,
     )]
-    pub outcome: Account<'info, Outcome>,
+    pub outcome: Box<Account<'info, Outcome>>,
 
     #[account(
         init,
         payer = disputer,
         space = DisputeConfig::DISCRIMINATOR.len() + DisputeConfig::INIT_SPACE,
-        seeds = [DISPUTE_SEED.as_ref(), hash.as_ref()],
+        seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
         bump
     )]
-    pub disputer_config: Account<'info, DisputeConfig>,
+    pub disputer_config: Box<Account<'info, DisputeConfig>>,
 
     #[account(
         init_if_needed,
         payer = disputer,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
-        seeds = [REPUTATION_SEED.as_ref(), disputer.key().as_ref()],
+        seeds = [REPUTATION_SEED.as_bytes(), disputer.key().as_ref()],
         bump
     )]
-    pub reputation: Account<'info, Reputation>,
+    pub reputation: Box<Account<'info, Reputation>>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
@@ -107,6 +107,7 @@ impl<'info> Dispute<'info> {
         let question = &mut self.question;
         question.state = QuestionState::Escalated;
         question.escalated = true;
+        question.has_dispute = true;
 
         self.disputer_config.set_inner(DisputeConfig {
             disputer: self.disputer.key(),
