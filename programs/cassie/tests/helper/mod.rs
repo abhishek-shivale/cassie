@@ -2,6 +2,7 @@ pub mod ask;
 pub mod close;
 pub mod council_vote;
 pub mod dispute;
+pub mod finalize_council;
 pub mod initialize;
 pub mod propose;
 pub mod update_config;
