@@ -4,7 +4,7 @@ use anchor_lang::AccountDeserialize;
 use cassie::constants::USDC_PUBKEY;
 use cassie::state::answer::Answer;
 use cassie::state::question::{Question, QuestionState};
-use helper::ask::{bounty_ata, question_pda, AskParams, BOUNTY};
+use helper::ask::{bounty_ata, question_pda, BOUNTY};
 use helper::propose::{
     answer_pda, fund_proposer, propose, setup_with_question, ProposeParams, STAKE,
 };
