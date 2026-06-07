@@ -6,13 +6,10 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AggregationResult {
-    /// Resolved cleanly. `result` is the winning side, `resolver` how it was decided.
     Resolved { result: bool, resolver: Resolver },
-    /// Must escalate to the council. `reason` says why.
     Escalate { reason: EscalationReason },
 }
 
-// calculate weight for user for answering the question
 pub fn compute_weight(stake: u64, score: u64, active_days: u32) -> u128 {
     let score = score.min(MAX_SCORE);
     let days = active_days.min(MAX_DAYS) as u64;
@@ -25,8 +22,6 @@ pub fn compute_weight(stake: u64, score: u64, active_days: u32) -> u128 {
         / ((SCALE as u128) * (SCALE as u128))
 }
 
-// resolve or escalate function helps to make sure there is no divergence from other side
-// if yes then it would resolve or escalate based on result
 pub fn resolve_or_escalate(
     yes_weight: u128,
     no_weight: u128,
@@ -52,7 +47,6 @@ pub fn resolve_or_escalate(
     let minority_bps = (minority * BPS_DENOMINATOR) / total;
 
     if minority_bps >= divergence_bps as u128 {
-        // Too contested to call.
         AggregationResult::Escalate {
             reason: EscalationReason::Divergence,
         }
@@ -66,12 +60,11 @@ pub fn resolve_or_escalate(
 
 #[derive(Clone, Copy, Debug)]
 pub struct RewardSplit {
-    pub total: u64,        // distributable pool (bounty + slash - treasury)
-    pub treasury_cut: u64, // protocol cut
-    pub slash_amount: u64, // total slashed from losers
+    pub total: u64,
+    pub treasury_cut: u64,
+    pub slash_amount: u64,
 }
 
-// the caller divides `total` among correct answers (after any dispute deduction)
 pub fn compute_reward_split(
     bounty: u64,
     loser_total_stake: u64,
