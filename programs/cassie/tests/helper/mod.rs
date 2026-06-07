@@ -1,5 +1,6 @@
 pub mod ask;
 pub mod close;
+pub mod council_vote;
 pub mod dispute;
 pub mod initialize;
 pub mod propose;
