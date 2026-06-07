@@ -13,7 +13,7 @@ use solana_keypair::Keypair;
 use solana_signer::Signer;
 
 pub fn finalize_ix(cranker: Pubkey, hash: &[u8; 32]) -> Instruction {
-    let data = cassie::instruction::FinalizeCouncil { _hash: *hash }.data();
+    let data = cassie::instruction::FinalizeCouncil { hash: *hash }.data();
 
     let accounts = cassie::accounts::Finalize {
         cranker,

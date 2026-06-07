@@ -83,7 +83,7 @@ pub fn warp_past_dispute_window(svm: &mut LiteSVM, hash: &[u8; 32]) {
 
 pub fn dispute_ix(disputer: Pubkey, params: &DisputeParams) -> Instruction {
     let data = cassie::instruction::Dispute {
-        _hash: params.hash,
+        hash: params.hash,
         bond: params.bond,
         claimed_outcome: params.claimed_outcome,
         reason_hash: params.reason_hash,

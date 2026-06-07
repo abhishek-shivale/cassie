@@ -61,7 +61,7 @@ pub fn reputation_pda(proposer: Pubkey) -> Pubkey {
 
 pub fn propose_ix(proposer: Pubkey, params: &ProposeParams) -> Instruction {
     let data = cassie::instruction::Propose {
-        _hash: params.hash,
+        hash: params.hash,
         stake: params.stake,
         side: params.side,
     }

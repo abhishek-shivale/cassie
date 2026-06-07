@@ -71,7 +71,7 @@ pub fn warp_past_council_window(svm: &mut LiteSVM, hash: &[u8; 32]) {
 }
 
 pub fn vote_ix(voter: Pubkey, hash: &[u8; 32], vote: bool) -> Instruction {
-    let data = cassie::instruction::CouncilVote { _hash: *hash, vote }.data();
+    let data = cassie::instruction::CouncilVote { hash: *hash, vote }.data();
 
     let accounts = cassie::accounts::Vote {
         voter,

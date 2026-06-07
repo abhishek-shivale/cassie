@@ -24,7 +24,7 @@ pub fn warp_past_answer_window(svm: &mut LiteSVM, hash: &[u8; 32]) {
 }
 
 pub fn close_ix(cranker: Pubkey, hash: &[u8; 32]) -> Instruction {
-    let data = cassie::instruction::CloseProposers { _hash: *hash }.data();
+    let data = cassie::instruction::CloseProposers { hash: *hash }.data();
 
     let accounts = cassie::accounts::CloseProposer {
         cranker,

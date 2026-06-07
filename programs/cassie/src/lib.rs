@@ -86,17 +86,20 @@ pub mod cassie {
         )
     }
 
-    pub fn propose(ctx: Context<Propose>, _hash: [u8; 32], stake: u64, side: bool) -> Result<()> {
+    #[allow(unused_variables)]
+    pub fn propose(ctx: Context<Propose>, hash: [u8; 32], stake: u64, side: bool) -> Result<()> {
         ctx.accounts.propose(stake, side, &ctx.bumps)
     }
 
-    pub fn close_proposers(ctx: Context<CloseProposer>, _hash: [u8; 32]) -> Result<()> {
+    #[allow(unused_variables)]
+    pub fn close_proposers(ctx: Context<CloseProposer>, hash: [u8; 32]) -> Result<()> {
         ctx.accounts.close(&ctx.bumps)
     }
 
+    #[allow(unused_variables)]
     pub fn dispute(
         ctx: Context<Dispute>,
-        _hash: [u8; 32],
+        hash: [u8; 32],
         bond: u64,
         claimed_outcome: bool,
         reason_hash: [u8; 128],
@@ -105,11 +108,13 @@ pub mod cassie {
             .dispute(bond, claimed_outcome, reason_hash, &ctx.bumps)
     }
 
-    pub fn council_vote(ctx: Context<Vote>, _hash: [u8; 32], vote: bool) -> Result<()> {
+    #[allow(unused_variables)]
+    pub fn council_vote(ctx: Context<Vote>, hash: [u8; 32], vote: bool) -> Result<()> {
         ctx.accounts.vote(vote, &ctx.bumps)
     }
 
-    pub fn finalize_council(ctx: Context<Finalize>, _hash: [u8; 32]) -> Result<()> {
+    #[allow(unused_variables)]
+    pub fn finalize_council(ctx: Context<Finalize>, hash: [u8; 32]) -> Result<()> {
         ctx.accounts.finalize()
     }
 

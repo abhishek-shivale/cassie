@@ -5,6 +5,7 @@ pub mod dispute;
 pub mod finalize_council;
 pub mod initialize;
 pub mod propose;
+pub mod settle;
 pub mod update_config;
 pub mod update_council;
 pub mod utils;
