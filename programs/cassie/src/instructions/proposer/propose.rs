@@ -32,12 +32,14 @@ pub struct Propose<'info> {
     pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
+        mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = proposer,
     )]
     pub proposer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
+        mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = question,
     )]

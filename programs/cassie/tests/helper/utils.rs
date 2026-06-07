@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use anchor_lang::prelude::Pubkey;
+use anchor_lang::prelude::{Clock, Pubkey};
 use anchor_lang::solana_program::instruction::Instruction;
 use litesvm::LiteSVM;
 use solana_account::Account;
@@ -87,6 +87,12 @@ pub fn set_token_account(svm: &mut LiteSVM, owner: Pubkey, mint: Pubkey, amount:
     )
     .unwrap();
     address
+}
+
+pub fn warp_unix(svm: &mut LiteSVM, unix_timestamp: i64) {
+    let mut clock = svm.get_sysvar::<Clock>();
+    clock.unix_timestamp = unix_timestamp;
+    svm.set_sysvar::<Clock>(&clock);
 }
 
 pub fn token_balance(svm: &LiteSVM, address: Pubkey) -> u64 {
