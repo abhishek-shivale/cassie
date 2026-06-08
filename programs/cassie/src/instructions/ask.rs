@@ -106,6 +106,7 @@ impl<'info> Ask<'info> {
             yes_count: 0,
             no_count: 0,
             per_answer_reward: 0,
+            council_reward_per_vote: 0,
             metadata_uri,
             callback_program,
             callback_discriminator,

@@ -79,6 +79,7 @@ pub fn vote_ix(voter: Pubkey, hash: &[u8; 32], vote: bool) -> Instruction {
         config: config_pda(),
         council_total: council_total_pda(hash),
         council_vote: council_vote_pda(hash, voter),
+        reputation: crate::helper::propose::reputation_pda(voter),
         system_program: system_program::ID,
     }
     .to_account_metas(None);

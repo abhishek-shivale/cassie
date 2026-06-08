@@ -92,6 +92,7 @@ fn settle_ix_inner(
     treasury: Pubkey,
     hash: &[u8; 32],
     dispute: Option<Pubkey>,
+    council_total: Option<Pubkey>,
     callback_program: Option<Pubkey>,
 ) -> Instruction {
     let data = cassie::instruction::SettleQuestion { hash: *hash }.data();
@@ -105,6 +106,7 @@ fn settle_ix_inner(
         pool_ata: bounty_ata(hash),
         treasury_ata: treasury_ata(treasury),
         dispute,
+        council_total,
         callback_program,
         token_program: TOKEN_PROGRAM_ID,
     }
@@ -118,7 +120,7 @@ fn settle_ix_inner(
 }
 
 pub fn settle_ix(cranker: Pubkey, treasury: Pubkey, hash: &[u8; 32]) -> Instruction {
-    settle_ix_inner(cranker, treasury, hash, None, None)
+    settle_ix_inner(cranker, treasury, hash, None, None, None)
 }
 
 pub fn settle(
@@ -131,8 +133,15 @@ pub fn settle(
     send_ix(svm, ix, cranker, &[cranker])
 }
 
-// settle a question that was disputed: passes the dispute PDA so settle can mark
-// the dispute won/lost and compute its reward.
+fn dispute_pda(hash: &[u8; 32]) -> Pubkey {
+    crate::helper::dispute::dispute_pda(hash)
+}
+
+fn council_total_pda(hash: &[u8; 32]) -> Pubkey {
+    crate::helper::council_vote::council_total_pda(hash)
+}
+
+// settle a disputed (but not council-resolved) question.
 pub fn settle_disputed(
     svm: &mut LiteSVM,
     cranker: &Keypair,
@@ -143,7 +152,44 @@ pub fn settle_disputed(
         cranker.pubkey(),
         treasury,
         hash,
-        Some(crate::helper::dispute::dispute_pda(hash)),
+        Some(dispute_pda(hash)),
+        None,
+        None,
+    );
+    send_ix(svm, ix, cranker, &[cranker])
+}
+
+// settle a council-resolved question (passes the council tally).
+pub fn settle_council(
+    svm: &mut LiteSVM,
+    cranker: &Keypair,
+    treasury: Pubkey,
+    hash: &[u8; 32],
+) -> TransactionResult {
+    let ix = settle_ix_inner(
+        cranker.pubkey(),
+        treasury,
+        hash,
+        None,
+        Some(council_total_pda(hash)),
+        None,
+    );
+    send_ix(svm, ix, cranker, &[cranker])
+}
+
+// settle a question that was disputed AND escalated to council.
+pub fn settle_disputed_council(
+    svm: &mut LiteSVM,
+    cranker: &Keypair,
+    treasury: Pubkey,
+    hash: &[u8; 32],
+) -> TransactionResult {
+    let ix = settle_ix_inner(
+        cranker.pubkey(),
+        treasury,
+        hash,
+        Some(dispute_pda(hash)),
+        Some(council_total_pda(hash)),
         None,
     );
     send_ix(svm, ix, cranker, &[cranker])
@@ -157,7 +203,14 @@ pub fn settle_with_callback(
     hash: &[u8; 32],
     callback_program: Pubkey,
 ) -> TransactionResult {
-    let ix = settle_ix_inner(cranker.pubkey(), treasury, hash, None, Some(callback_program));
+    let ix = settle_ix_inner(
+        cranker.pubkey(),
+        treasury,
+        hash,
+        None,
+        None,
+        Some(callback_program),
+    );
     send_ix(svm, ix, cranker, &[cranker])
 }
 

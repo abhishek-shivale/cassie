@@ -58,4 +58,8 @@ pub enum CassieError {
     InvalidDisputeOutcome,
     #[msg("Disputed question must be settled with its dispute account.")]
     MissingDisputeAccount,
+    #[msg("Council-resolved question must be settled with its council_total account.")]
+    MissingCouncilAccount,
+    #[msg("Close grace period is still active.")]
+    CloseGraceActive,
 }

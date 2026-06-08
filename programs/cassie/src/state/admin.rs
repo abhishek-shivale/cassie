@@ -31,6 +31,8 @@ pub struct OracleConfig {
     pub slash_bps: u64,
     // treasury_bps = protocol fee e.g. 10 = 0.1% of reward pool
     pub treasury_bps: u64,
+    // council_bps = council reward share of gross pool, paid only on council-resolved questions
+    pub council_bps: u64,
 
     // council
     pub council: [Pubkey; MAX_COUNCIL_MEMBER],

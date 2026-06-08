@@ -2,7 +2,6 @@ mod helper;
 
 use anchor_lang::AccountDeserialize;
 use cassie::constants::USDC_PUBKEY;
-use cassie::state::answer::Answer;
 use cassie::Reputation;
 use helper::ask::bounty_ata;
 use helper::claim_reward::{
@@ -13,11 +12,6 @@ use helper::update_config::{update_config, UpdateConfigParams};
 use helper::utils::{ata, token_balance};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
-
-fn read_answer(svm: &litesvm::LiteSVM, hash: &[u8; 32], claimer: &Keypair) -> Answer {
-    let raw = svm.get_account(&answer_pda(hash, claimer.pubkey())).unwrap();
-    Answer::try_deserialize(&mut raw.data.as_slice()).unwrap()
-}
 
 fn read_rep(svm: &litesvm::LiteSVM, claimer: &Keypair) -> Reputation {
     let raw = svm.get_account(&reputation_pda(claimer.pubkey())).unwrap();
@@ -39,8 +33,8 @@ fn claim_ok_winner() {
     );
     assert_eq!(token_balance(&svm, bounty_ata(&hash)), pool_before - 1740);
 
-    let ans = read_answer(&svm, &hash, &winner);
-    assert!(ans.claimed);
+    // answer PDA is closed at claim (rent reclaimed).
+    assert!(svm.get_account(&answer_pda(&hash, winner.pubkey())).is_none());
 
     let rep = read_rep(&svm, &winner);
     assert_eq!(rep.correct, 1);
@@ -61,8 +55,8 @@ fn claim_loser_slashed() {
         before + 375
     );
 
-    let ans = read_answer(&svm, &hash, &loser);
-    assert!(ans.claimed);
+    // answer PDA is closed at claim (rent reclaimed).
+    assert!(svm.get_account(&answer_pda(&hash, loser.pubkey())).is_none());
 
     let rep = read_rep(&svm, &loser);
     assert_eq!(rep.correct, 0);

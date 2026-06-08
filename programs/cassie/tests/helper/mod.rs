@@ -1,6 +1,7 @@
 pub mod ask;
 pub mod claim_reward;
 pub mod close;
+pub mod close_question;
 pub mod council_vote;
 pub mod dispute;
 pub mod finalize_council;

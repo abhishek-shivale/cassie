@@ -4,7 +4,9 @@ use crate::aggregation::{
 };
 use crate::constants::*;
 use crate::error::CassieError;
-use crate::{Answer, DisputeConfig, OracleConfig, Outcome, Question, QuestionState, Reputation};
+use crate::{
+    Answer, CouncilVote, DisputeConfig, OracleConfig, Outcome, Question, QuestionState, Reputation,
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
     transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
@@ -48,6 +50,13 @@ pub struct ClaimReward<'info> {
         constraint = dispute.disputer == claimer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
+
+    #[account(
+        mut,
+        seeds = [COUNCIL_VOTE_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
+        bump = council_vote.bump,
+    )]
+    pub council_vote: Option<Box<Account<'info, CouncilVote>>>,
 
     #[account(
         mut,
@@ -103,6 +112,10 @@ impl<'info> ClaimReward<'info> {
             dispute_won = Some(won);
             acted = true;
         }
+        if let Some(payout) = self.settle_council(&mut ru, result, now) {
+            total_payout = total_payout.saturating_add(payout);
+            acted = true;
+        }
 
         require!(acted, CassieError::AlreadyClaimed);
 
@@ -111,6 +124,30 @@ impl<'info> ClaimReward<'info> {
         }
         self.commit_reputation(ru, now, dispute_won);
 
+        self.close_personal_accounts()?;
+
+        Ok(())
+    }
+
+    fn settle_council(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<u64> {
+        let per_vote = self.question.council_reward_per_vote;
+        let cv = self.council_vote.as_ref()?;
+        let correct = cv.vote == result;
+        apply_council_reputation(ru, correct, now);
+        Some(if correct { per_vote } else { 0 })
+    }
+
+    fn close_personal_accounts(&self) -> Result<()> {
+        let dest = self.claimer.to_account_info();
+        if let Some(answer) = self.answer.as_ref() {
+            answer.close(dest.clone())?;
+        }
+        if let Some(dispute) = self.dispute.as_ref() {
+            dispute.close(dest.clone())?;
+        }
+        if let Some(council_vote) = self.council_vote.as_ref() {
+            council_vote.close(dest)?;
+        }
         Ok(())
     }
 

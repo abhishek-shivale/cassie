@@ -17,6 +17,7 @@ pub const DIVERGENCE_BPS: u64 = 3500;
 pub const MIN_BOUNTY: u64 = 10;
 pub const SLASH_BPS: u64 = 5000;
 pub const TREASURY_BPS: u64 = 100;
+pub const COUNCIL_BPS: u64 = 0;
 pub const COUNCIL_SIZE: u8 = 3;
 
 pub struct InitParams {
@@ -28,6 +29,7 @@ pub struct InitParams {
     pub slash_bps: u64,
     pub treasury: Pubkey,
     pub treasury_bps: u64,
+    pub council_bps: u64,
     pub council: [Pubkey; 9],
     pub council_size: u8,
 }
@@ -43,6 +45,7 @@ impl Default for InitParams {
             slash_bps: SLASH_BPS,
             treasury: Pubkey::new_unique(),
             treasury_bps: TREASURY_BPS,
+            council_bps: COUNCIL_BPS,
             council: council_members(COUNCIL_SIZE),
             council_size: COUNCIL_SIZE,
         }
@@ -71,6 +74,7 @@ pub fn init_config_ix(admin: Pubkey, params: &InitParams) -> Instruction {
         slash_bps: params.slash_bps,
         treasury: params.treasury,
         treasury_bps: params.treasury_bps,
+        council_bps: params.council_bps,
         council: params.council,
         council_size: params.council_size,
     }
