@@ -3,7 +3,6 @@ mod helper;
 use anchor_lang::prelude::Pubkey;
 use anchor_lang::AccountDeserialize;
 use cassie::constants::USDC_PUBKEY;
-use cassie::state::answer::Answer;
 use cassie::state::outcome::{Outcome, Resolver};
 use cassie::state::question::{Question, QuestionState};
 use cassie::{DisputeConfig, Reputation};
@@ -11,12 +10,13 @@ use cassie::{DisputeConfig, Reputation};
 use helper::ask::{ask, question_pda, AskParams};
 use helper::claim_reward::{answer_pda, claim, claim_dispute_only};
 use helper::close::{close, outcome_pda, warp_past_answer_window};
+use helper::close_question::{close_question, close_question_council, warp_past_close_grace};
 use helper::council_vote::vote;
 use helper::dispute::{dispute, dispute_params, dispute_pda, fund_disputer, warp_past_dispute_window};
 use helper::finalize_council::finalize;
 use helper::initialize::{init_config, InitParams};
 use helper::propose::{fund_proposer, propose, reputation_pda, ProposeParams};
-use helper::settle::{settle, settle_disputed};
+use helper::settle::{settle, settle_council, settle_disputed_council};
 use helper::utils::{ata, set_token_account, setup_svm, token_balance, ONE_SOL};
 use litesvm::LiteSVM;
 use solana_keypair::Keypair;
@@ -37,11 +37,6 @@ fn read_outcome(svm: &LiteSVM, hash: &[u8; 32]) -> Outcome {
 fn read_dispute(svm: &LiteSVM, hash: &[u8; 32]) -> DisputeConfig {
     let raw = svm.get_account(&dispute_pda(hash)).unwrap();
     DisputeConfig::try_deserialize(&mut raw.data.as_slice()).unwrap()
-}
-
-fn read_answer(svm: &LiteSVM, hash: &[u8; 32], who: Pubkey) -> Answer {
-    let raw = svm.get_account(&answer_pda(hash, who)).unwrap();
-    Answer::try_deserialize(&mut raw.data.as_slice()).unwrap()
 }
 
 fn read_rep(svm: &LiteSVM, who: Pubkey) -> Reputation {
@@ -137,8 +132,15 @@ fn flow_optimistic_full_lifecycle() {
     claim(&mut svm, &winner, &hash).unwrap();
     // stake 750 + reward 990 = 1740.
     assert_eq!(usdc(&svm, winner.pubkey()), before + 1740);
-    assert!(read_answer(&svm, &hash, winner.pubkey()).claimed);
+    // answer PDA closed at claim (rent reclaimed).
+    assert!(svm.get_account(&answer_pda(&hash, winner.pubkey())).is_none());
     assert_eq!(read_rep(&svm, winner.pubkey()).correct, 1);
+
+    // teardown: after the grace window the question is closed (pool drained to 0).
+    warp_past_close_grace(&mut svm, &hash);
+    close_question(&mut svm, &admin, admin.pubkey(), treasury, &hash).unwrap();
+    assert!(svm.get_account(&question_pda(&hash)).is_none());
+    assert!(svm.get_account(&outcome_pda(&hash)).is_none());
 }
 
 // =============================================================================
@@ -183,8 +185,9 @@ fn flow_council_full_lifecycle() {
     ));
 
     warp_past_dispute_window(&mut svm, &hash);
-    settle(&mut svm, &admin, treasury, &hash).unwrap();
+    settle_council(&mut svm, &admin, treasury, &hash).unwrap();
     // loser stake 750 slashed 50% = 375; gross 1375; treasury 13; pool 1362 / 1 correct.
+    // council_bps defaults to 0, so no council pool is carved here.
     assert_eq!(usdc(&svm, treasury), 13);
     assert_eq!(read_question(&svm, &hash).per_answer_reward, 1362);
 
@@ -195,6 +198,11 @@ fn flow_council_full_lifecycle() {
     // winner: 750 + 1362 = 2112; loser: 50% of 750 = 375.
     assert_eq!(usdc(&svm, winner.pubkey()), w_before + 2112);
     assert_eq!(usdc(&svm, loser.pubkey()), l_before + 375);
+
+    // teardown: council-resolved, so the council tally is closed too.
+    warp_past_close_grace(&mut svm, &hash);
+    close_question_council(&mut svm, &admin, admin.pubkey(), treasury, &hash).unwrap();
+    assert!(svm.get_account(&question_pda(&hash)).is_none());
 }
 
 // =============================================================================
@@ -231,7 +239,7 @@ fn flow_dispute_won_full_lifecycle() {
     assert!(!read_outcome(&svm, &hash).result); // overturned to false
 
     warp_past_dispute_window(&mut svm, &hash);
-    settle_disputed(&mut svm, &admin, treasury, &hash).unwrap();
+    settle_disputed_council(&mut svm, &admin, treasury, &hash).unwrap();
 
     let d = read_dispute(&svm, &hash);
     assert!(d.resolved);
@@ -247,6 +255,11 @@ fn flow_dispute_won_full_lifecycle() {
     let a_before = usdc(&svm, answerer.pubkey());
     claim(&mut svm, &answerer, &hash).unwrap();
     assert_eq!(usdc(&svm, answerer.pubkey()), a_before + 375);
+
+    // teardown: the 0-correct-answer remainder is swept to treasury and closed.
+    warp_past_close_grace(&mut svm, &hash);
+    close_question_council(&mut svm, &admin, admin.pubkey(), treasury, &hash).unwrap();
+    assert!(svm.get_account(&question_pda(&hash)).is_none());
 }
 
 // =============================================================================
@@ -275,7 +288,7 @@ fn flow_dispute_lost_full_lifecycle() {
     assert!(read_outcome(&svm, &hash).result); // stays true
 
     warp_past_dispute_window(&mut svm, &hash);
-    settle_disputed(&mut svm, &admin, treasury, &hash).unwrap();
+    settle_disputed_council(&mut svm, &admin, treasury, &hash).unwrap();
 
     let d = read_dispute(&svm, &hash);
     assert!(!d.resolved);
@@ -291,6 +304,11 @@ fn flow_dispute_lost_full_lifecycle() {
     let a_before = usdc(&svm, answerer.pubkey());
     claim(&mut svm, &answerer, &hash).unwrap();
     assert_eq!(usdc(&svm, answerer.pubkey()), a_before + 1740);
+
+    // teardown: the disputer's lost bond remains and is swept to treasury.
+    warp_past_close_grace(&mut svm, &hash);
+    close_question_council(&mut svm, &admin, admin.pubkey(), treasury, &hash).unwrap();
+    assert!(svm.get_account(&question_pda(&hash)).is_none());
 }
 
 // =============================================================================
@@ -320,5 +338,5 @@ fn flow_disputed_settle_requires_dispute_account() {
     // plain settle omits the dispute account -> MissingDisputeAccount.
     assert!(settle(&mut svm, &admin, treasury, &hash).is_err());
     // with the dispute account, settlement proceeds.
-    assert!(settle_disputed(&mut svm, &admin, treasury, &hash).is_ok());
+    assert!(settle_disputed_council(&mut svm, &admin, treasury, &hash).is_ok());
 }

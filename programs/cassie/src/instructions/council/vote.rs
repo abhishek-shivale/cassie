@@ -1,6 +1,8 @@
 use crate::constants::*;
 use crate::error::CassieError;
-use crate::{CouncilTotal, CouncilVote, CouncilVoted, OracleConfig, Question, QuestionState};
+use crate::{
+    CouncilTotal, CouncilVote, CouncilVoted, OracleConfig, Question, QuestionState, Reputation,
+};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -14,15 +16,14 @@ pub struct Vote<'info> {
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
         bump = question.bump,
     )]
-    pub question: Account<'info, Question>,
+    pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
         bump = config.bump,
     )]
-    pub config: Account<'info, OracleConfig>,
+    pub config: Box<Account<'info, OracleConfig>>,
 
-    // per-question council tally. created by the first vote.
     #[account(
         init_if_needed,
         payer = voter,
@@ -30,9 +31,8 @@ pub struct Vote<'info> {
         seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
         bump
     )]
-    pub council_total: Account<'info, CouncilTotal>,
+    pub council_total: Box<Account<'info, CouncilTotal>>,
 
-    // one vote per member per question. init -> double vote reverts.
     #[account(
         init,
         payer = voter,
@@ -40,7 +40,16 @@ pub struct Vote<'info> {
         seeds = [COUNCIL_VOTE_SEED.as_bytes(), hash.as_ref(), voter.key().as_ref()],
         bump
     )]
-    pub council_vote: Account<'info, CouncilVote>,
+    pub council_vote: Box<Account<'info, CouncilVote>>,
+
+    #[account(
+        init_if_needed,
+        payer = voter,
+        space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
+        seeds = [REPUTATION_SEED.as_bytes(), voter.key().as_ref()],
+        bump
+    )]
+    pub reputation: Box<Account<'info, Reputation>>,
 
     pub system_program: Program<'info, System>,
 }
@@ -93,6 +102,13 @@ impl<'info> Vote<'info> {
             claimed: false,
             bump: bumps.council_vote,
         });
+
+        // ensure the voter has a reputation account for the eventual claim.
+        if self.reputation.voter == Pubkey::default() {
+            self.reputation.voter = self.voter.key();
+            self.reputation.bump = bumps.reputation;
+        }
+        self.reputation.is_council = true;
 
         emit!(CouncilVoted {
             hash: self.question.hash,

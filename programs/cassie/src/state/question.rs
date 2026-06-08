@@ -52,6 +52,9 @@ pub struct Question {
     // equal reward per correct answer, set at settle, read at claim
     pub per_answer_reward: u64,
 
+    // equal reward per correct council vote, set at settle (council path), read at claim
+    pub council_reward_per_vote: u64,
+
     // question state
     pub state: QuestionState,
 }

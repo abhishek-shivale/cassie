@@ -1,7 +1,10 @@
 use crate::aggregation::{compute_reward_split, RewardSplit};
 use crate::constants::*;
 use crate::error::CassieError;
-use crate::{DisputeConfig, OracleConfig, Outcome, Question, QuestionSettled, QuestionState};
+use crate::{
+    CouncilTotal, DisputeConfig, OracleConfig, Outcome, Question, QuestionSettled, QuestionState,
+    Resolver,
+};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
 use anchor_lang::solana_program::program::invoke_signed;
@@ -62,6 +65,14 @@ pub struct Settle<'info> {
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
+    // present only when the question was resolved by council. settle reads the
+    // tally to split the council reward pool across the winning voters.
+    #[account(
+        seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
+        bump = council_total.bump,
+    )]
+    pub council_total: Option<Box<Account<'info, CouncilTotal>>>,
+
     pub callback_program: Option<UncheckedAccount<'info>>,
 
     pub token_program: Interface<'info, TokenInterface>,
@@ -74,12 +85,11 @@ impl<'info> Settle<'info> {
             matches!(self.question.state, QuestionState::Resolved),
             CassieError::InvalidState
         );
+        let now = Clock::get()?.unix_timestamp;
         require!(
-            Clock::get()?.unix_timestamp > self.question.dispute_deadline,
+            now > self.question.dispute_deadline,
             CassieError::DisputeWindowActive
         );
-        // a disputed question must be settled with its dispute account, so the
-        // dispute is resolved and its bond/slash share is accounted for.
         require!(
             !self.question.has_dispute || self.dispute.is_some(),
             CassieError::MissingDisputeAccount
@@ -108,6 +118,31 @@ impl<'info> Settle<'info> {
             }
         }
 
+        // council reward: only on council-resolved questions. 
+        let mut council_reward_per_vote = 0u64;
+        if self.outcome.resolver == Resolver::Council {
+            let council_total = self
+                .council_total
+                .as_ref()
+                .ok_or(CassieError::MissingCouncilAccount)?;
+            let gross = split.total.saturating_add(split.treasury_cut);
+            let council_pool =
+                ((gross as u128) * (self.config.council_bps as u128) / BPS_DENOMINATOR) as u64;
+            answer_pool = answer_pool.saturating_sub(council_pool);
+
+            let correct_votes = if result {
+                council_total.yes_count
+            } else {
+                council_total.no_count
+            };
+            council_reward_per_vote = if correct_votes == 0 {
+                0
+            } else {
+                council_pool / (correct_votes as u64)
+            };
+        }
+        self.question.council_reward_per_vote = council_reward_per_vote;
+
         let per_answer_reward = if correct_count == 0 {
             0
         } else {
@@ -115,6 +150,7 @@ impl<'info> Settle<'info> {
         };
         self.question.per_answer_reward = per_answer_reward;
         self.question.state = QuestionState::Settled;
+        self.outcome.settled_at = now;
 
         emit!(QuestionSettled {
             hash,

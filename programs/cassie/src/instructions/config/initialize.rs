@@ -39,6 +39,7 @@ impl<'info> InitializeConfig<'info> {
         slash_bps: u64,
         treasury: Pubkey,
         treasury_bps: u64,
+        council_bps: u64,
         council: [Pubkey; MAX_COUNCIL_MEMBER],
         council_size: u8,
     ) -> Result<()> {
@@ -46,6 +47,7 @@ impl<'info> InitializeConfig<'info> {
         require_gte!(BPS_DENOMINATOR as u64, divergence_bps, CassieError::MaxBpsReached);
         require_gte!(BPS_DENOMINATOR as u64, treasury_bps, CassieError::MaxBpsReached);
         require_gte!(BPS_DENOMINATOR as u64, slash_bps, CassieError::MaxBpsReached);
+        require_gte!(BPS_DENOMINATOR as u64, council_bps, CassieError::MaxBpsReached);
 
         // windows, all in seconds
         require_gte!(default_dispute_window, 7200, CassieError::InvalidWindow);
@@ -92,6 +94,7 @@ impl<'info> InitializeConfig<'info> {
             slash_bps,
             treasury,
             treasury_bps,
+            council_bps,
             min_stake: MIN_STAKE,
             freeze: false,
         });

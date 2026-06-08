@@ -125,6 +125,30 @@ impl<'info> ClaimReward<'info> {
         }
         self.commit_reputation(ru, now, dispute_won, council_correct);
 
+        self.close_personal_accounts()?;
+
+        Ok(())
+    }
+
+    fn settle_council(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<u64> {
+        let per_vote = self.question.council_reward_per_vote;
+        let cv = self.council_vote.as_ref()?;
+        let correct = cv.vote == result;
+        apply_council_reputation(ru, correct, now);
+        Some(if correct { per_vote } else { 0 })
+    }
+
+    fn close_personal_accounts(&self) -> Result<()> {
+        let dest = self.claimer.to_account_info();
+        if let Some(answer) = self.answer.as_ref() {
+            answer.close(dest.clone())?;
+        }
+        if let Some(dispute) = self.dispute.as_ref() {
+            dispute.close(dest.clone())?;
+        }
+        if let Some(council_vote) = self.council_vote.as_ref() {
+            council_vote.close(dest)?;
+        }
         Ok(())
     }
 

@@ -85,6 +85,7 @@ fn claim_ix_inner(
     hash: &[u8; 32],
     answer: Option<Pubkey>,
     dispute: Option<Pubkey>,
+    council_vote: Option<Pubkey>,
 ) -> Instruction {
     let data = cassie::instruction::ClaimReward { hash: *hash }.data();
 
@@ -95,6 +96,7 @@ fn claim_ix_inner(
         outcome: outcome_pda(hash),
         answer,
         dispute,
+        council_vote,
         reputation: reputation_pda(claimer),
         usdc_mint: USDC_PUBKEY,
         pool_ata: bounty_ata(hash),
@@ -111,7 +113,7 @@ fn claim_ix_inner(
 }
 
 pub fn claim_ix(claimer: Pubkey, hash: &[u8; 32]) -> Instruction {
-    claim_ix_inner(claimer, hash, Some(answer_pda(hash, claimer)), None)
+    claim_ix_inner(claimer, hash, Some(answer_pda(hash, claimer)), None, None)
 }
 
 // claim an answer payout (no dispute account).
@@ -131,6 +133,19 @@ pub fn claim_dispute_only(
         hash,
         None,
         Some(crate::helper::dispute::dispute_pda(hash)),
+        None,
+    );
+    send_ix(svm, ix, claimer, &[claimer])
+}
+
+// claim a council voting reward (claimer only voted).
+pub fn claim_council(svm: &mut LiteSVM, claimer: &Keypair, hash: &[u8; 32]) -> TransactionResult {
+    let ix = claim_ix_inner(
+        claimer.pubkey(),
+        hash,
+        None,
+        None,
+        Some(crate::helper::council_vote::council_vote_pda(hash, claimer.pubkey())),
     );
     send_ix(svm, ix, claimer, &[claimer])
 }

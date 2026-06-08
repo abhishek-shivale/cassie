@@ -29,6 +29,7 @@ pub mod cassie {
         slash_bps: u64,
         treasury: Pubkey,
         treasury_bps: u64,
+        council_bps: u64,
         council: [Pubkey; 9],
         council_size: u8,
     ) -> Result<()> {
@@ -42,6 +43,7 @@ pub mod cassie {
             slash_bps,
             treasury,
             treasury_bps,
+            council_bps,
             council,
             council_size,
         )
@@ -128,5 +130,9 @@ pub mod cassie {
 
     pub fn claim_reward(ctx: Context<ClaimReward>, hash: [u8; 32]) -> Result<()> {
         ctx.accounts.claim(hash)
+    }
+
+    pub fn close_question(ctx: Context<CloseQuestion>, hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.close(hash)
     }
 }
