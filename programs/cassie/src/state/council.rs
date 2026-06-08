@@ -24,6 +24,8 @@ pub struct CouncilVote {
     pub vote: bool,
     // when member voted
     pub voted_at: i64,
+    // did the member claim their reputation update
+    pub claimed: bool,
     // bump
     pub bump: u8,
 }
