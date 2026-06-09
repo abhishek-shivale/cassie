@@ -53,14 +53,14 @@ pub struct ClaimReward<'info> {
 
     #[account(
         mut,
-        seeds = [COUNCIL_VOTE_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
+        seeds = [COUNCIL_VOTE_SEED.as_ref(), hash.as_ref(), claimer.key().as_ref()],
         bump = council_vote.bump,
     )]
-    pub council_vote: Option<Box<Account<'info, CouncilVote>>>,
+    pub council_vote: Option<Account<'info, CouncilVote>>,
 
     #[account(
         mut,
-        seeds = [REPUTATION_SEED.as_bytes(), claimer.key().as_ref()],
+        seeds = [REPUTATION_SEED.as_ref(), claimer.key().as_ref()],
         bump = reputation.bump,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
@@ -102,6 +102,7 @@ impl<'info> ClaimReward<'info> {
         let mut total_payout: u64 = 0;
         let mut acted = false;
         let mut dispute_won: Option<bool> = None;
+        let mut council_correct: Option<bool> = None;
 
         if let Some(payout) = self.settle_answer(&mut ru, result, now) {
             total_payout = total_payout.saturating_add(payout);
@@ -112,8 +113,8 @@ impl<'info> ClaimReward<'info> {
             dispute_won = Some(won);
             acted = true;
         }
-        if let Some(payout) = self.settle_council(&mut ru, result, now) {
-            total_payout = total_payout.saturating_add(payout);
+        if let Some(correct) = self.settle_council(&mut ru, result, now) {
+            council_correct = Some(correct);
             acted = true;
         }
 
@@ -122,7 +123,7 @@ impl<'info> ClaimReward<'info> {
         if total_payout > 0 {
             self.transfer_payout(hash, total_payout)?;
         }
-        self.commit_reputation(ru, now, dispute_won);
+        self.commit_reputation(ru, now, dispute_won, council_correct);
 
         self.close_personal_accounts()?;
 
@@ -164,7 +165,6 @@ impl<'info> ClaimReward<'info> {
     }
 
     fn settle_answer(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<u64> {
-        let is_council = self.config.council.contains(&self.claimer.key());
         let per_answer_reward = self.question.per_answer_reward;
         let slash_bps = self.config.slash_bps as u16;
 
@@ -173,22 +173,24 @@ impl<'info> ClaimReward<'info> {
             return None;
         }
         let correct = answer.side == result;
-        let payout = compute_payout(
-            answer.side,
-            answer.stake,
-            result,
-            per_answer_reward,
-            slash_bps,
-        );
+        let payout = compute_payout(answer.side, answer.stake, result, per_answer_reward, slash_bps);
         let slashed = answer.stake.saturating_sub(payout);
         answer.claimed = true;
 
-        if is_council {
-            apply_council_reputation(ru, correct, now);
-        } else {
-            apply_answer_reputation(ru, correct, slashed, now);
-        }
+        apply_answer_reputation(ru, correct, slashed, now);
         Some(payout)
+    }
+
+    fn settle_council(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<bool> {
+        let vote = self.council_vote.as_mut()?;
+        if vote.claimed {
+            return None;
+        }
+        let correct = vote.vote == result;
+        vote.claimed = true;
+
+        apply_council_reputation(ru, correct, now);
+        Some(correct)
     }
 
     fn settle_dispute(&mut self, ru: &mut RepUpdate, now: i64) -> Option<(u64, bool)> {
@@ -224,7 +226,13 @@ impl<'info> ClaimReward<'info> {
         Ok(())
     }
 
-    fn commit_reputation(&mut self, ru: RepUpdate, now: i64, dispute_won: Option<bool>) {
+    fn commit_reputation(
+        &mut self,
+        ru: RepUpdate,
+        now: i64,
+        dispute_won: Option<bool>,
+        council_correct: Option<bool>,
+    ) {
         let rep = &mut self.reputation;
         rep.score = ru.score;
         rep.answered = ru.answered;
@@ -239,6 +247,12 @@ impl<'info> ClaimReward<'info> {
                 rep.disputes_won = rep.disputes_won.saturating_add(1);
             } else {
                 rep.disputes_lost = rep.disputes_lost.saturating_add(1);
+            }
+        }
+        if let Some(correct) = council_correct {
+            rep.council_votes = rep.council_votes.saturating_add(1);
+            if correct {
+                rep.council_correct = rep.council_correct.saturating_add(1);
             }
         }
         rep.last_updated = now;
