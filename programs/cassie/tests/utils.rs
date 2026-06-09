@@ -1,7 +1,9 @@
 #![allow(dead_code)]
+
 use anchor_lang::prelude::{AccountInfo, Clock, Pubkey};
 use anchor_lang::solana_program::instruction::Instruction;
-use cassie::{Question, USDC_PUBKEY};
+use anchor_lang::Accounts;
+use cassie::{CouncilTotal, Question, USDC_PUBKEY};
 use litesvm::LiteSVM;
 use solana_account::Account;
 use solana_keypair::Keypair;
@@ -15,6 +17,7 @@ use spl_token_interface::{
     state::{Account as SplTokenAccount, AccountState, Mint},
     ID as TOKEN_PROGRAM_ID,
 };
+use std::fmt::Debug;
 
 pub fn program_id() -> Pubkey {
     cassie::ID
@@ -109,14 +112,15 @@ pub fn send_ix(
     let blockhash = svm.latest_blockhash();
     let msg = Message::new_with_blockhash(&[ix], Some(&payer.pubkey()), &blockhash);
     let tx = VersionedTransaction::try_new(VersionedMessage::Legacy(msg), signers).unwrap();
+    let result = svm.simulate_transaction(tx.clone());
     let res = svm.send_transaction(tx);
+        println!("{:?}", result?.meta);
     res
 }
 
-pub fn wrap_unix(svm: &mut LiteSVM, unix_timestamp: i64) {
-    let mut clock = svm.get_sysvar::<Clock>();
-    clock.unix_timestamp = unix_timestamp;
-    svm.set_sysvar(&clock)
+pub fn wrap_unix(svm: &mut LiteSVM, clock: &mut Clock, unix_timestamp: i64) {
+    clock.unix_timestamp = clock.unix_timestamp + unix_timestamp;
+    svm.set_sysvar(clock)
 }
 
 pub fn token_balance(svm: &LiteSVM, address: &Pubkey) -> u64 {
@@ -134,9 +138,14 @@ pub fn get_pda(seed: &[&[u8]]) -> Pubkey {
     Pubkey::find_program_address(seed, &cassie::id()).0
 }
 
-pub fn account_data(svm: &mut LiteSVM, acc: Pubkey) {
+use anchor_lang::AccountDeserialize;
+pub fn account_data<T>(svm: &mut LiteSVM, acc: Pubkey)
+where
+    T: AccountDeserialize + Debug,
+{
     let account = svm.get_account(&acc).unwrap();
-    use anchor_lang::AccountDeserialize;
-    println!("account data: {:?}", Question::try_deserialize(&mut account.data.as_slice()).unwrap());
 
+    let data = T::try_deserialize(&mut account.data.as_slice()).unwrap();
+
+    println!("account data: {:?}", data);
 }

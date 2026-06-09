@@ -1,4 +1,5 @@
 mod utils;
+use anchor_lang::prelude::Clock;
 use utils::*;
 mod instructions;
 
@@ -6,7 +7,7 @@ use anchor_lang::InstructionData;
 use anchor_lang::prelude::*;
 use solana_keypair::Keypair;
 use solana_signer::Signer;
-use cassie::{QUESTION_CONFIG_SEED, USDC_PUBKEY};
+use cassie::{QUESTION_CONFIG_SEED, SECONDS_PER_DAY, USDC_PUBKEY};
 use instructions::*;
 #[test]
 fn test_happy_path() -> Result<()> {
@@ -16,6 +17,7 @@ fn test_happy_path() -> Result<()> {
 
     // council members
     let mut members = council_members(&mut svm);
+    let mut clock = svm.get_sysvar::<Clock>();
 
 
     // mint usdc
@@ -46,7 +48,7 @@ fn test_happy_path() -> Result<()> {
 
 
     // close proposer
-    wrap_unix(&mut svm, 3600 + 10);
+    wrap_unix(&mut svm, &mut clock, 3600 + 10);
     let cranker = get_new_account(&mut svm);
     close_proposer(&mut svm, cranker, hash);
     // you can see data from here
@@ -55,11 +57,20 @@ fn test_happy_path() -> Result<()> {
     // dispute
     let disputer = get_new_account(&mut svm);
     dispute(&mut svm, disputer, hash);
-    account_data(&mut svm, get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]));
+    // account_data(&mut svm, get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]));
 
     //council vote
     members[0] = new_council_member;
     council_vote(&mut svm, hash, members);
+
+    // finalize council
+    // let clock: Clock = svm.get_sysvar();
+    println!("timestamp before {:?}", clock.unix_timestamp);
+    wrap_unix(&mut svm, &mut clock, 1000);
+    // let clock: Clock = svm.get_sysvar();
+    println!("timestamp after {:?}", clock.unix_timestamp);
+    let cranker = get_new_account(&mut svm);
+    finalize_council(&mut svm, hash, cranker);
 
     Ok(())
 }

@@ -1,7 +1,8 @@
-use crate::utils::{add_ata, ata, get_pda, send_ix, SLASH_BPS, TREASURY_BPS};
+use std::os::unix::raw::ino_t;
+use crate::utils::{account_data, add_ata, ata, get_pda, send_ix, SLASH_BPS, TREASURY_BPS};
 use anchor_lang::prelude::{system_program, AccountMeta, Pubkey};
 use anchor_lang::{InstructionData, ToAccountMetas};
-use cassie::{ADMIN_CONFIG_SEED, ANSWER_SEED, COUNCIL_TOTAL_SEED, COUNCIL_VOTE_SEED, DISPUTE_SEED, OUTCOME_SEED, QUESTION_CONFIG_SEED, REPUTATION_SEED, USDC_PUBKEY};
+use cassie::{CouncilTotal, OracleConfig, ADMIN_CONFIG_SEED, ANSWER_SEED, COUNCIL_TOTAL_SEED, COUNCIL_VOTE_SEED, DISPUTE_SEED, OUTCOME_SEED, QUESTION_CONFIG_SEED, REPUTATION_SEED, USDC_PUBKEY};
 use litesvm::LiteSVM;
 use solana_keypair::Keypair;
 use solana_signer::Signer;
@@ -250,4 +251,26 @@ fn vote(svm: &mut LiteSVM, hash: [u8; 32], members: &Keypair, vote: bool) {
     let ix = init_ix(accounts, data);
     let res = send_ix(svm, ix, &members, &[&members]);
     assert!(res.is_ok(), "council vote should be ok {:?}.", res.err());
+}
+
+pub fn finalize_council(svm: &mut LiteSVM, hash: [u8; 32], cranker: Keypair) {
+    let data = cassie::instruction::FinalizeCouncil {
+        hash
+    }.data();
+
+    account_data::<CouncilTotal>(svm, get_pda(&[COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()]));
+
+    account_data::<OracleConfig>(svm, get_pda(&[ADMIN_CONFIG_SEED.as_ref()]));
+
+    let account = cassie::accounts::Finalize {
+        council_total: get_pda(&[COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()]),
+        question: get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]),
+        config: get_pda(&[ADMIN_CONFIG_SEED.as_ref()]),
+        cranker: cranker.pubkey(),
+        outcome: get_pda(&[OUTCOME_SEED.as_ref(), hash.as_ref()]),
+    }.to_account_metas(None);
+
+    let ix = init_ix(account, data);
+    let res = send_ix(svm, ix, &cranker, &[&cranker]);
+    assert!(res.is_ok(), "finalize council should be ok {:?}.", res.err());
 }
