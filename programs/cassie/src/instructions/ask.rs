@@ -8,52 +8,52 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
 };
+    
+    #[derive(Accounts)]
+    #[instruction(hash: [u8; 32])]
+    pub struct Ask<'info> {
+        #[account(mut)]
+        pub questioner: Signer<'info>,
 
-#[derive(Accounts)]
-#[instruction(hash: [u8; 32])]
-pub struct Ask<'info> {
-    #[account(mut)]
-    pub questioner: Signer<'info>,
+        #[account(
+            seeds = [ADMIN_CONFIG_SEED.as_bytes()],
+            bump = config.bump,
+        )]
+        pub config: Box<Account<'info, OracleConfig>>,
 
-    #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
-    )]
-    pub config: Box<Account<'info, OracleConfig>>,
+        #[account(
+            init,
+            payer = questioner,
+            space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
+            seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            bump
+        )]
+        pub question: Box<Account<'info, Question>>,
 
-    #[account(
-        init,
-        payer = questioner,
-        space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
-        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump
-    )]
-    pub question: Box<Account<'info, Question>>,
+        #[account(
+            address = USDC_PUBKEY
+        )]
+        pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    #[account(
-        address = USDC_PUBKEY
-    )]
-    pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
+        #[account(
+            mut,
+            associated_token::mint = usdc_mint,
+            associated_token::authority = questioner,
+        )]
+        pub questioner_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account(
-        mut,
-        associated_token::mint = usdc_mint,
-        associated_token::authority = questioner,
-    )]
-    pub questioner_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+        #[account(
+            init,
+            payer = questioner,
+            associated_token::mint = usdc_mint,
+            associated_token::authority = question,
+        )]
+        pub bounty_ata: Box<InterfaceAccount<'info, TokenAccount>>, // reward pool
 
-    #[account(
-        init,
-        payer = questioner,
-        associated_token::mint = usdc_mint,
-        associated_token::authority = question,
-    )]
-    pub bounty_ata: Box<InterfaceAccount<'info, TokenAccount>>, // reward pool
-
-    pub token_program: Interface<'info, TokenInterface>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>,
-}
+        pub token_program: Interface<'info, TokenInterface>,
+        pub associated_token_program: Program<'info, AssociatedToken>,
+        pub system_program: Program<'info, System>,
+    }
 
 impl<'info> Ask<'info> {
     pub fn deposit_bounty(&mut self, bounty: u64) -> Result<()> {

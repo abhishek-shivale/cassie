@@ -111,8 +111,8 @@ pub mod cassie {
     }
 
     #[allow(unused_variables)]
-    pub fn council_vote(ctx: Context<Vote>, hash: [u8; 32], vote: bool) -> Result<()> {
-        ctx.accounts.vote(vote, &ctx.bumps)
+    pub fn council_vote(ctx: Context<Vote>, hash: [u8; 32], vote: bool, bond: u64) -> Result<()> {
+        ctx.accounts.vote(vote, &ctx.bumps, bond)
     }
 
     #[allow(unused_variables)]

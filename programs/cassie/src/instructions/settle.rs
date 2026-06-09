@@ -118,7 +118,7 @@ impl<'info> Settle<'info> {
             }
         }
 
-        // council reward: only on council-resolved questions. 
+        // council reward: only on council-resolved questions.
         let mut council_reward_per_vote = 0u64;
         if self.outcome.resolver == Resolver::Council {
             let council_total = self

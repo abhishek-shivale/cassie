@@ -1,6 +1,7 @@
 #![allow(dead_code)]
-use anchor_lang::prelude::{Clock, Pubkey};
+use anchor_lang::prelude::{AccountInfo, Clock, Pubkey};
 use anchor_lang::solana_program::instruction::Instruction;
+use cassie::{Question, USDC_PUBKEY};
 use litesvm::LiteSVM;
 use solana_account::Account;
 use solana_keypair::Keypair;
@@ -15,37 +16,44 @@ use spl_token_interface::{
     ID as TOKEN_PROGRAM_ID,
 };
 
-pub const ONE_SOL: u64 = 1_000_000_000;
-
 pub fn program_id() -> Pubkey {
-    cassie::id()
+    cassie::ID
 }
 
-pub fn setup_svm() -> (LiteSVM, Keypair) {
+pub const ONE_SOL: u64 = 1_000_000_000;
+pub const SLASH_BPS: u64 = 5_000;
+
+pub const TREASURY_BPS: u64 = 1_000;
+
+pub fn setup() -> (LiteSVM, Keypair) {
     let mut svm = LiteSVM::new();
     let payer = Keypair::new();
-    let bytes = include_bytes!("../../../../target/deploy/cassie.so");
+    let bytes = include_bytes!("../../../target/deploy/cassie.so");
     svm.add_program(cassie::id(), bytes).unwrap();
     svm.airdrop(&payer.pubkey(), ONE_SOL).unwrap();
     (svm, payer)
 }
 
-pub fn pda(seeds: &[&[u8]]) -> (Pubkey, u8) {
-    Pubkey::find_program_address(seeds, &cassie::id())
+pub fn council_members(svm: &mut LiteSVM) -> [Keypair; 9] {
+    std::array::from_fn(|_| {
+        let keypair = Keypair::new();
+        svm.airdrop(&keypair.pubkey(), ONE_SOL).unwrap();
+        keypair
+    })
 }
 
-pub fn set_mint(svm: &mut LiteSVM, address: Pubkey, authority: Pubkey, decimals: u8) {
+pub fn mint_token(svm: &mut LiteSVM, pubkey: Pubkey, authority: Pubkey) {
     let mint = Mint {
         mint_authority: COption::Some(authority),
         supply: 0,
-        decimals,
+        decimals: 2,
         is_initialized: true,
         freeze_authority: COption::None,
     };
     let mut data = vec![0u8; Mint::LEN];
     Mint::pack(mint, &mut data).unwrap();
     svm.set_account(
-        address,
+        pubkey,
         Account {
             lamports: ONE_SOL,
             data,
@@ -61,43 +69,35 @@ pub fn ata(owner: Pubkey, mint: Pubkey) -> Pubkey {
     get_associated_token_address(&owner, &mint)
 }
 
-pub fn set_token_account(svm: &mut LiteSVM, owner: Pubkey, mint: Pubkey, amount: u64) -> Pubkey {
-    let address = ata(owner, mint);
+pub fn add_ata(svm: &mut LiteSVM, owner: Pubkey, amount: u64) -> Pubkey {
+    let address = get_associated_token_address(&owner, &USDC_PUBKEY);
+
     let token = SplTokenAccount {
-        mint,
-        owner,
+        mint: USDC_PUBKEY,
         amount,
+        owner,
         delegate: COption::None,
         state: AccountState::Initialized,
         is_native: COption::None,
         delegated_amount: 0,
         close_authority: COption::None,
     };
+
     let mut data = vec![0u8; SplTokenAccount::LEN];
     SplTokenAccount::pack(token, &mut data).unwrap();
     svm.set_account(
         address,
         Account {
             lamports: ONE_SOL,
-            data,
             owner: TOKEN_PROGRAM_ID,
             executable: false,
             rent_epoch: 0,
+            data,
         },
     )
     .unwrap();
+
     address
-}
-
-pub fn warp_unix(svm: &mut LiteSVM, unix_timestamp: i64) {
-    let mut clock = svm.get_sysvar::<Clock>();
-    clock.unix_timestamp = unix_timestamp;
-    svm.set_sysvar::<Clock>(&clock);
-}
-
-pub fn token_balance(svm: &LiteSVM, address: Pubkey) -> u64 {
-    let raw = svm.get_account(&address).unwrap();
-    SplTokenAccount::unpack(&raw.data).unwrap().amount
 }
 
 pub fn send_ix(
@@ -109,5 +109,34 @@ pub fn send_ix(
     let blockhash = svm.latest_blockhash();
     let msg = Message::new_with_blockhash(&[ix], Some(&payer.pubkey()), &blockhash);
     let tx = VersionedTransaction::try_new(VersionedMessage::Legacy(msg), signers).unwrap();
-    svm.send_transaction(tx)
+    let res = svm.send_transaction(tx);
+    res
+}
+
+pub fn wrap_unix(svm: &mut LiteSVM, unix_timestamp: i64) {
+    let mut clock = svm.get_sysvar::<Clock>();
+    clock.unix_timestamp = unix_timestamp;
+    svm.set_sysvar(&clock)
+}
+
+pub fn token_balance(svm: &LiteSVM, address: &Pubkey) -> u64 {
+    let raw = svm.get_account(address).unwrap();
+    SplTokenAccount::unpack(&raw.data).unwrap().amount
+}
+
+pub fn get_new_account(svm: &mut LiteSVM) -> Keypair {
+    let key_pair = Keypair::new();
+    svm.airdrop(&key_pair.pubkey(), ONE_SOL).unwrap();
+    key_pair
+}
+
+pub fn get_pda(seed: &[&[u8]]) -> Pubkey {
+    Pubkey::find_program_address(seed, &cassie::id()).0
+}
+
+pub fn account_data(svm: &mut LiteSVM, acc: Pubkey) {
+    let account = svm.get_account(&acc).unwrap();
+    use anchor_lang::AccountDeserialize;
+    println!("account data: {:?}", Question::try_deserialize(&mut account.data.as_slice()).unwrap());
+
 }
