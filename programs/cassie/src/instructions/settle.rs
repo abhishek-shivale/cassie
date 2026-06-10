@@ -309,7 +309,4 @@ impl<'info> Settle<'info> {
             .map_err(|_| error!(CassieError::CallbackInvocationFailed))?;
         Ok(())
     }
-
-
-    
 }

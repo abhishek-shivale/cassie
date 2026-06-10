@@ -116,11 +116,9 @@ pub fn send_ix(
         svm.latest_blockhash(),
     );
     let result = svm.send_transaction(tx);
-    let logs  = match &result {
-        Ok(x) => {&x.logs},
-        Err(e) => {
-            &e.meta.logs
-        }
+    let logs = match &result {
+        Ok(x) => &x.logs,
+        Err(e) => &e.meta.logs,
     };
 
     for log in logs {

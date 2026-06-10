@@ -44,10 +44,26 @@ impl<'info> InitializeConfig<'info> {
         council_size: u8,
     ) -> Result<()> {
         // bps can't exceed 100%
-        require_gte!(BPS_DENOMINATOR as u64, divergence_bps, CassieError::MaxBpsReached);
-        require_gte!(BPS_DENOMINATOR as u64, treasury_bps, CassieError::MaxBpsReached);
-        require_gte!(BPS_DENOMINATOR as u64, slash_bps, CassieError::MaxBpsReached);
-        require_gte!(BPS_DENOMINATOR as u64, council_bps, CassieError::MaxBpsReached);
+        require_gte!(
+            BPS_DENOMINATOR as u64,
+            divergence_bps,
+            CassieError::MaxBpsReached
+        );
+        require_gte!(
+            BPS_DENOMINATOR as u64,
+            treasury_bps,
+            CassieError::MaxBpsReached
+        );
+        require_gte!(
+            BPS_DENOMINATOR as u64,
+            slash_bps,
+            CassieError::MaxBpsReached
+        );
+        require_gte!(
+            BPS_DENOMINATOR as u64,
+            council_bps,
+            CassieError::MaxBpsReached
+        );
 
         // windows, all in seconds
         require_gte!(default_dispute_window, 7200, CassieError::InvalidWindow);

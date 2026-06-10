@@ -8,7 +8,6 @@ pub const MIN_STAKE: u64 = 750;
 
 pub const TREASURY_BPS: u64 = 750;
 
-
 pub const DISPUTE_REWARD_BPS: u64 = 2500;
 
 #[constant]

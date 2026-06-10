@@ -56,7 +56,11 @@ impl<'info> CloseProposer<'info> {
 
         let yes_w = self.question.total_yes_weight;
         let no_w = self.question.total_no_weight;
-        let answer_count = self.question.yes_count.checked_add(self.question.no_count).unwrap();
+        let answer_count = self
+            .question
+            .yes_count
+            .checked_add(self.question.no_count)
+            .unwrap();
 
         let result = crate::aggregation::resolve_or_escalate(
             yes_w,

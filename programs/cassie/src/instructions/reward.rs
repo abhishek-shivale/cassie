@@ -94,12 +94,12 @@ impl<'info> ClaimReward<'info> {
         );
 
         let result = self.outcome.result;
-        let now    = Clock::get()?.unix_timestamp;
+        let now = Clock::get()?.unix_timestamp;
         let mut ru = self.snapshot_rep();
 
-        let mut total_payout:    u64         = 0;
-        let mut acted:           bool        = false;
-        let mut dispute_won:     Option<bool> = None;
+        let mut total_payout: u64 = 0;
+        let mut acted: bool = false;
+        let mut dispute_won: Option<bool> = None;
         let mut council_correct: Option<bool> = None;
 
         if let Some(payout) = self.settle_answer(&mut ru, result, now) {
@@ -108,11 +108,11 @@ impl<'info> ClaimReward<'info> {
         }
         if let Some((payout, won)) = self.settle_dispute(&mut ru, now) {
             total_payout = total_payout.saturating_add(payout);
-            dispute_won  = Some(won);
+            dispute_won = Some(won);
             acted = true;
         }
         if let Some((payout, correct)) = self.settle_council(&mut ru, result, now) {
-            total_payout    = total_payout.saturating_add(payout);
+            total_payout = total_payout.saturating_add(payout);
             council_correct = Some(correct);
             acted = true;
         }
@@ -128,10 +128,9 @@ impl<'info> ClaimReward<'info> {
         Ok(())
     }
 
-
     fn settle_answer(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<u64> {
         let per_answer_reward = self.question.per_answer_reward;
-        let slash_bps         = self.config.slash_bps as u16;
+        let slash_bps = self.config.slash_bps as u16;
 
         let answer = self.answer.as_mut()?;
         if answer.claimed {
@@ -139,7 +138,13 @@ impl<'info> ClaimReward<'info> {
         }
         let correct = answer.side == result;
         // compute_payout: correct → stake + reward, wrong → stake * (1 - slash_bps)
-        let payout  = compute_payout(answer.side, answer.stake, result, per_answer_reward, slash_bps);
+        let payout = compute_payout(
+            answer.side,
+            answer.stake,
+            result,
+            per_answer_reward,
+            slash_bps,
+        );
         let slashed = answer.stake.saturating_sub(payout);
         answer.claimed = true;
 
@@ -152,7 +157,7 @@ impl<'info> ClaimReward<'info> {
         if dispute.claimed {
             return None;
         }
-        let won    = dispute.resolved;
+        let won = dispute.resolved;
         let payout = if won { dispute.reward } else { 0 };
         dispute.claimed = true;
 
@@ -166,8 +171,8 @@ impl<'info> ClaimReward<'info> {
         result: bool,
         now: i64,
     ) -> Option<(u64, bool)> {
-        let per_vote        = self.question.council_reward_per_vote;
-        let slash_bps       = self.config.slash_bps as u128;
+        let per_vote = self.question.council_reward_per_vote;
+        let slash_bps = self.config.slash_bps as u128;
         let council_slash_bps = (slash_bps * 2).min(BPS_DENOMINATOR);
 
         let cv = self.council_vote.as_mut()?;
@@ -195,9 +200,9 @@ impl<'info> ClaimReward<'info> {
             CpiContext::new_with_signer(
                 self.token_program.key(),
                 TransferChecked {
-                    from:      self.pool_ata.to_account_info(),
-                    to:        self.claimer_ata.to_account_info(),
-                    mint:      self.usdc_mint.to_account_info(),
+                    from: self.pool_ata.to_account_info(),
+                    to: self.claimer_ata.to_account_info(),
+                    mint: self.usdc_mint.to_account_info(),
                     authority: self.question.to_account_info(),
                 },
                 &[seeds],
@@ -210,13 +215,13 @@ impl<'info> ClaimReward<'info> {
 
     fn snapshot_rep(&self) -> RepUpdate {
         RepUpdate {
-            score:           self.reputation.score,
-            answered:        self.reputation.answered,
-            correct:         self.reputation.correct,
-            active_days:     self.reputation.active_days,
+            score: self.reputation.score,
+            answered: self.reputation.answered,
+            correct: self.reputation.correct,
+            active_days: self.reputation.active_days,
             last_answer_day: self.reputation.last_answer_day,
-            times_slashed:   self.reputation.times_slashed,
-            total_slashed:   self.reputation.total_slashed,
+            times_slashed: self.reputation.times_slashed,
+            total_slashed: self.reputation.total_slashed,
         }
     }
 
@@ -228,18 +233,18 @@ impl<'info> ClaimReward<'info> {
         council_correct: Option<bool>,
     ) {
         let rep = &mut self.reputation;
-        rep.score           = ru.score;
-        rep.answered        = ru.answered;
-        rep.correct         = ru.correct;
-        rep.active_days     = ru.active_days;
+        rep.score = ru.score;
+        rep.answered = ru.answered;
+        rep.correct = ru.correct;
+        rep.active_days = ru.active_days;
         rep.last_answer_day = ru.last_answer_day;
-        rep.times_slashed   = ru.times_slashed;
-        rep.total_slashed   = ru.total_slashed;
+        rep.times_slashed = ru.times_slashed;
+        rep.total_slashed = ru.total_slashed;
 
         if let Some(won) = dispute_won {
             rep.disputes_filed = rep.disputes_filed.saturating_add(1);
             if won {
-                rep.disputes_won  = rep.disputes_won.saturating_add(1);
+                rep.disputes_won = rep.disputes_won.saturating_add(1);
             } else {
                 rep.disputes_lost = rep.disputes_lost.saturating_add(1);
             }

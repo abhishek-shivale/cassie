@@ -384,7 +384,13 @@ pub fn claim_dispute(svm: &mut LiteSVM, hash: [u8; 32], claimer: &Keypair) {
     assert!(res.is_ok(), "claim dispute should be ok {:?}.", res.err());
 }
 
-pub fn close(svm: &mut LiteSVM, hash: [u8; 32], cranker: &Keypair, questioner: &Keypair, treasury_pubkey: Pubkey) {
+pub fn close(
+    svm: &mut LiteSVM,
+    hash: [u8; 32],
+    cranker: &Keypair,
+    questioner: &Keypair,
+    treasury_pubkey: Pubkey,
+) {
     let data = cassie::instruction::CloseQuestion { hash }.data();
     let treasury_ata_addr = ata(treasury_pubkey, USDC_PUBKEY);
     if svm.get_account(&treasury_ata_addr).is_none() {
@@ -404,7 +410,8 @@ pub fn close(svm: &mut LiteSVM, hash: [u8; 32], cranker: &Keypair, questioner: &
             USDC_PUBKEY,
         ),
         token_program: TOKEN_PROGRAM_ID,
-    }.to_account_metas(None);
+    }
+    .to_account_metas(None);
 
     let ix = init_ix(account, data);
     let res = send_ix(svm, ix, &cranker, &[&cranker]);
