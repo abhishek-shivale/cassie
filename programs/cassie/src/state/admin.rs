@@ -3,7 +3,7 @@ use anchor_lang::prelude::clock::UnixTimestamp;
 use anchor_lang::prelude::*;
 
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Debug)]
 pub struct OracleConfig {
     // admin authority
     pub admin: Pubkey,

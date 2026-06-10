@@ -15,27 +15,27 @@ pub struct Finalize<'info> {
     #[account(
         mut,
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Account<'info, Question>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Account<'info, OracleConfig>,
 
     #[account(
         mut,
         seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
-        bump = council_total.bump,
+        bump,
     )]
     pub council_total: Account<'info, CouncilTotal>,
 
     #[account(
         mut,
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Account<'info, Outcome>,
 }
@@ -52,9 +52,15 @@ impl<'info> Finalize<'info> {
 
         // not already finalized
         require!(
-            self.council_total.finalized_at.is_none(),
+            self.council_total.finalized.is_none(),
             CassieError::InvalidState
         );
+
+        let now = Clock::get()?.unix_timestamp;
+
+        let deadline = self.council_total.opened_at + self.config.default_council_window;
+
+        require!(now > deadline, CassieError::CouncilWindowActive);
 
         // quorum: enough members must have voted
         let total_votes = self
@@ -62,17 +68,21 @@ impl<'info> Finalize<'info> {
             .yes_count
             .checked_add(self.council_total.no_count)
             .unwrap();
-        require!(
-            total_votes >= self.config.quorum,
-            CassieError::QuorumNotReached
-        );
+
+        if total_votes >= self.config.quorum {
+            self.council_total.dispute_time += SECONDS_PER_DAY;
+            require!(
+                total_votes >= self.config.quorum,
+                CassieError::QuorumNotReached
+            );
+        }
 
         // majority verdict (tie -> no)
         let verdict = self.council_total.yes_count > self.council_total.no_count;
         let now = Clock::get()?.unix_timestamp;
 
         // council is final
-        self.council_total.finalized_at = Some(verdict);
+        self.council_total.finalized = Some(verdict);
         self.question.state = QuestionState::Resolved;
 
         // overwrite outcome with the council verdict

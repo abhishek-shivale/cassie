@@ -10,7 +10,7 @@ pub struct UpdateConfig<'info> {
     #[account(
         mut,
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
         has_one = admin @ CassieError::UnauthorizedAdmin,
     )]
     pub config: Account<'info, OracleConfig>,

@@ -62,4 +62,6 @@ pub enum CassieError {
     MissingCouncilAccount,
     #[msg("Close grace period is still active.")]
     CloseGraceActive,
+    #[msg("Council voting window active.")]
+    CouncilWindowActive,
 }

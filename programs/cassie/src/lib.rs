@@ -13,7 +13,7 @@ pub use events::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("5sU2QBvow11aj1m6z6DdqpsaqVuh84e8RWpQD5njdgYM");
+declare_id!("377f8fpEExurtJNPfjNF7sTLEL9ZLCnCC4FCwDxU6BFz");
 
 #[program]
 pub mod cassie {
@@ -111,8 +111,8 @@ pub mod cassie {
     }
 
     #[allow(unused_variables)]
-    pub fn council_vote(ctx: Context<Vote>, hash: [u8; 32], vote: bool) -> Result<()> {
-        ctx.accounts.vote(vote, &ctx.bumps)
+    pub fn council_vote(ctx: Context<Vote>, hash: [u8; 32], vote: bool, bond: u64) -> Result<()> {
+        ctx.accounts.vote(vote, &ctx.bumps, bond)
     }
 
     #[allow(unused_variables)]
@@ -124,8 +124,7 @@ pub mod cassie {
         ctx: Context<'info, Settle<'info>>,
         hash: [u8; 32],
     ) -> Result<()> {
-        ctx.accounts.settle(hash)?;
-        ctx.accounts.fire_callback(ctx.remaining_accounts)
+        ctx.accounts.settle(hash, ctx.remaining_accounts)
     }
 
     pub fn claim_reward(ctx: Context<ClaimReward>, hash: [u8; 32]) -> Result<()> {

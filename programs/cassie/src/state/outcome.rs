@@ -33,8 +33,8 @@ pub struct Outcome {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug, InitSpace)]
 pub enum Resolver {
     Optimistic, // question resolve without any dispute and no opposition
-    Weighted,   // question resolve as weighted there was the opposition
-    Council,    // resolve by council
+    // Weighted,   // question resolve as weighted there was the opposition
+    Council, // resolve by council
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]

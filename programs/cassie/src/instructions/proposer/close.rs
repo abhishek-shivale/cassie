@@ -12,13 +12,13 @@ pub struct CloseProposer<'info> {
     #[account(
         mut,
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Account<'info, Question>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Account<'info, OracleConfig>,
 
@@ -56,7 +56,11 @@ impl<'info> CloseProposer<'info> {
 
         let yes_w = self.question.total_yes_weight;
         let no_w = self.question.total_no_weight;
-        let answer_count = self.question.yes_count.checked_add(self.question.no_count).unwrap();
+        let answer_count = self
+            .question
+            .yes_count
+            .checked_add(self.question.no_count)
+            .unwrap();
 
         let result = crate::aggregation::resolve_or_escalate(
             yes_w,

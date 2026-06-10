@@ -13,7 +13,10 @@ pub struct CloseQuestion<'info> {
     #[account(mut)]
     pub cranker: Signer<'info>,
 
-    /// CHECK: rent receiver; must equal the question creator.
+    // SOL-011: (1) token account drained before close (see handler drain + close_account below).
+    //          (2) lamports from question + outcome go to creator (verified address).
+    //          (3) pool_ata (token account) emptied via transfer_checked then close_account.
+    /// CHECK:
     #[account(mut, address = question.creator)]
     pub creator: UncheckedAccount<'info>,
 
@@ -21,13 +24,13 @@ pub struct CloseQuestion<'info> {
         mut,
         close = creator,
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
@@ -35,14 +38,14 @@ pub struct CloseQuestion<'info> {
         mut,
         close = creator,
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
 
     #[account(
         mut,
         seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
-        bump = council_total.bump,
+        bump,
     )]
     pub council_total: Option<Box<Account<'info, CouncilTotal>>>,
 
@@ -78,8 +81,11 @@ impl<'info> CloseQuestion<'info> {
             CassieError::CloseGraceActive
         );
 
-        let bump = [self.question.bump];
-        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
+        let (_, canonical_bump) = Pubkey::find_program_address(
+            &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            &crate::id(),
+        );
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &[canonical_bump]];
 
         let remaining = self.pool_ata.amount;
         if remaining > 0 {
@@ -99,7 +105,6 @@ impl<'info> CloseQuestion<'info> {
             )?;
         }
 
-        // close the now-empty pool ATA, returning its rent to the creator.
         close_account(CpiContext::new_with_signer(
             self.token_program.key(),
             CloseAccount {
@@ -109,12 +114,6 @@ impl<'info> CloseQuestion<'info> {
             },
             &[seeds],
         ))?;
-
-        // council tally (if any) is closed manually; question + outcome are
-        // closed by the `close = creator` constraints.
-        if let Some(council_total) = self.council_total.as_ref() {
-            council_total.close(self.creator.to_account_info())?;
-        }
 
         Ok(())
     }

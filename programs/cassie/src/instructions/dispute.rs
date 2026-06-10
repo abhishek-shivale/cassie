@@ -18,7 +18,7 @@ pub struct Dispute<'info> {
     #[account(
         mut,
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
@@ -43,13 +43,13 @@ pub struct Dispute<'info> {
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
 
@@ -67,7 +67,8 @@ pub struct Dispute<'info> {
         payer = disputer,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
         seeds = [REPUTATION_SEED.as_bytes(), disputer.key().as_ref()],
-        bump
+        bump,
+        constraint = reputation.voter == Pubkey::default() || reputation.voter == disputer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 

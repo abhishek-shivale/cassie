@@ -16,13 +16,13 @@ pub struct Propose<'info> {
     #[account(
         mut,
          seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump
+        bump
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
@@ -50,7 +50,8 @@ pub struct Propose<'info> {
         payer = proposer,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
         seeds = [REPUTATION_SEED.as_bytes(), proposer.key().as_ref()],
-        bump
+        bump,
+        constraint = reputation.voter == Pubkey::default() || reputation.voter == proposer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 

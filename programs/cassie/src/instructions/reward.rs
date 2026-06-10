@@ -20,66 +20,64 @@ pub struct ClaimReward<'info> {
 
     #[account(
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
 
     #[account(
         mut,
         seeds = [ANSWER_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
-        bump = answer.bump,
+        bump,
     )]
     pub answer: Option<Box<Account<'info, Answer>>>,
 
     #[account(
         mut,
         seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
-        bump = dispute.bump,
+        bump,
         constraint = dispute.disputer == claimer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
     #[account(
         mut,
-        seeds = [COUNCIL_VOTE_SEED.as_ref(), hash.as_ref(), claimer.key().as_ref()],
-        bump = council_vote.bump,
+        seeds = [COUNCIL_VOTE_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
+        bump,
     )]
     pub council_vote: Option<Account<'info, CouncilVote>>,
 
     #[account(
         mut,
-        seeds = [REPUTATION_SEED.as_ref(), claimer.key().as_ref()],
-        bump = reputation.bump,
+        seeds = [REPUTATION_SEED.as_bytes(), claimer.key().as_ref()],
+        bump,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 
-    #[account(
-        address = USDC_PUBKEY
-    )]
+    #[account(address = USDC_PUBKEY)]
     pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
-        associated_token::mint = usdc_mint,
+        associated_token::mint      = usdc_mint,
         associated_token::authority = question,
     )]
     pub pool_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
-        associated_token::mint = usdc_mint,
+        associated_token::mint      = usdc_mint,
         associated_token::authority = claimer,
     )]
     pub claimer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
@@ -100,7 +98,7 @@ impl<'info> ClaimReward<'info> {
         let mut ru = self.snapshot_rep();
 
         let mut total_payout: u64 = 0;
-        let mut acted = false;
+        let mut acted: bool = false;
         let mut dispute_won: Option<bool> = None;
         let mut council_correct: Option<bool> = None;
 
@@ -113,7 +111,8 @@ impl<'info> ClaimReward<'info> {
             dispute_won = Some(won);
             acted = true;
         }
-        if let Some(correct) = self.settle_council(&mut ru, result, now) {
+        if let Some((payout, correct)) = self.settle_council(&mut ru, result, now) {
+            total_payout = total_payout.saturating_add(payout);
             council_correct = Some(correct);
             acted = true;
         }
@@ -124,44 +123,9 @@ impl<'info> ClaimReward<'info> {
             self.transfer_payout(hash, total_payout)?;
         }
         self.commit_reputation(ru, now, dispute_won, council_correct);
-
         self.close_personal_accounts()?;
 
         Ok(())
-    }
-
-    fn settle_council(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<u64> {
-        let per_vote = self.question.council_reward_per_vote;
-        let cv = self.council_vote.as_ref()?;
-        let correct = cv.vote == result;
-        apply_council_reputation(ru, correct, now);
-        Some(if correct { per_vote } else { 0 })
-    }
-
-    fn close_personal_accounts(&self) -> Result<()> {
-        let dest = self.claimer.to_account_info();
-        if let Some(answer) = self.answer.as_ref() {
-            answer.close(dest.clone())?;
-        }
-        if let Some(dispute) = self.dispute.as_ref() {
-            dispute.close(dest.clone())?;
-        }
-        if let Some(council_vote) = self.council_vote.as_ref() {
-            council_vote.close(dest)?;
-        }
-        Ok(())
-    }
-
-    fn snapshot_rep(&self) -> RepUpdate {
-        RepUpdate {
-            score: self.reputation.score,
-            answered: self.reputation.answered,
-            correct: self.reputation.correct,
-            active_days: self.reputation.active_days,
-            last_answer_day: self.reputation.last_answer_day,
-            times_slashed: self.reputation.times_slashed,
-            total_slashed: self.reputation.total_slashed,
-        }
     }
 
     fn settle_answer(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<u64> {
@@ -173,24 +137,19 @@ impl<'info> ClaimReward<'info> {
             return None;
         }
         let correct = answer.side == result;
-        let payout = compute_payout(answer.side, answer.stake, result, per_answer_reward, slash_bps);
+        // compute_payout: correct → stake + reward, wrong → stake * (1 - slash_bps)
+        let payout = compute_payout(
+            answer.side,
+            answer.stake,
+            result,
+            per_answer_reward,
+            slash_bps,
+        );
         let slashed = answer.stake.saturating_sub(payout);
         answer.claimed = true;
 
         apply_answer_reputation(ru, correct, slashed, now);
         Some(payout)
-    }
-
-    fn settle_council(&mut self, ru: &mut RepUpdate, result: bool, now: i64) -> Option<bool> {
-        let vote = self.council_vote.as_mut()?;
-        if vote.claimed {
-            return None;
-        }
-        let correct = vote.vote == result;
-        vote.claimed = true;
-
-        apply_council_reputation(ru, correct, now);
-        Some(correct)
     }
 
     fn settle_dispute(&mut self, ru: &mut RepUpdate, now: i64) -> Option<(u64, bool)> {
@@ -206,9 +165,40 @@ impl<'info> ClaimReward<'info> {
         Some((payout, won))
     }
 
+    fn settle_council(
+        &mut self,
+        ru: &mut RepUpdate,
+        result: bool,
+        now: i64,
+    ) -> Option<(u64, bool)> {
+        let per_vote = self.question.council_reward_per_vote;
+        let slash_bps = self.config.slash_bps as u128;
+        let council_slash_bps = (slash_bps * 2).min(BPS_DENOMINATOR);
+
+        let cv = self.council_vote.as_mut()?;
+        if cv.claimed {
+            return None;
+        }
+        let correct = cv.vote == result;
+        apply_council_reputation(ru, correct, now);
+
+        let payout = if correct {
+            cv.stake.saturating_add(per_vote)
+        } else {
+            let returned_bps = BPS_DENOMINATOR.saturating_sub(council_slash_bps);
+            ((cv.stake as u128) * returned_bps / BPS_DENOMINATOR) as u64
+        };
+
+        cv.claimed = true;
+        Some((payout, correct))
+    }
+
     fn transfer_payout(&self, hash: [u8; 32], amount: u64) -> Result<()> {
-        let bump = [self.question.bump];
-        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
+        let (_, canonical_bump) = Pubkey::find_program_address(
+            &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            &crate::id(),
+        );
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &[canonical_bump]];
         transfer_checked(
             CpiContext::new_with_signer(
                 self.token_program.key(),
@@ -226,6 +216,18 @@ impl<'info> ClaimReward<'info> {
         Ok(())
     }
 
+    fn snapshot_rep(&self) -> RepUpdate {
+        RepUpdate {
+            score: self.reputation.score,
+            answered: self.reputation.answered,
+            correct: self.reputation.correct,
+            active_days: self.reputation.active_days,
+            last_answer_day: self.reputation.last_answer_day,
+            times_slashed: self.reputation.times_slashed,
+            total_slashed: self.reputation.total_slashed,
+        }
+    }
+
     fn commit_reputation(
         &mut self,
         ru: RepUpdate,
@@ -241,6 +243,7 @@ impl<'info> ClaimReward<'info> {
         rep.last_answer_day = ru.last_answer_day;
         rep.times_slashed = ru.times_slashed;
         rep.total_slashed = ru.total_slashed;
+
         if let Some(won) = dispute_won {
             rep.disputes_filed = rep.disputes_filed.saturating_add(1);
             if won {
@@ -256,5 +259,19 @@ impl<'info> ClaimReward<'info> {
             }
         }
         rep.last_updated = now;
+    }
+
+    fn close_personal_accounts(&self) -> Result<()> {
+        let dest = self.claimer.to_account_info();
+        if let Some(answer) = self.answer.as_ref() {
+            answer.close(dest.clone())?;
+        }
+        if let Some(dispute) = self.dispute.as_ref() {
+            dispute.close(dest.clone())?;
+        }
+        if let Some(council_vote) = self.council_vote.as_ref() {
+            council_vote.close(dest)?;
+        }
+        Ok(())
     }
 }

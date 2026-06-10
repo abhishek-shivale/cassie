@@ -1,7 +1,7 @@
 use crate::constants::{ADMIN_CONFIG_SEED, QUESTION_CONFIG_SEED, USDC_PUBKEY};
+use crate::error::CassieError;
 use crate::state::admin::OracleConfig;
 use crate::state::question::Question;
-use crate::error::CassieError;
 use crate::{CreateQuestion, QuestionState};
 use anchor_lang::prelude::*;
 use anchor_spl::{
@@ -16,38 +16,38 @@ pub struct Ask<'info> {
     pub questioner: Signer<'info>,
 
     #[account(
-        seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
-    )]
+            seeds = [ADMIN_CONFIG_SEED.as_bytes()],
+            bump,
+        )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
-        init,
-        payer = questioner,
-        space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
-        seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump
-    )]
+            init,
+            payer = questioner,
+            space = Question::DISCRIMINATOR.len() + Question::INIT_SPACE,
+            seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            bump
+        )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
-        address = USDC_PUBKEY
-    )]
+            address = USDC_PUBKEY
+        )]
     pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
-        associated_token::mint = usdc_mint,
-        associated_token::authority = questioner,
-    )]
+            mut,
+            associated_token::mint = usdc_mint,
+            associated_token::authority = questioner,
+        )]
     pub questioner_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        init,
-        payer = questioner,
-        associated_token::mint = usdc_mint,
-        associated_token::authority = question,
-    )]
+            init,
+            payer = questioner,
+            associated_token::mint = usdc_mint,
+            associated_token::authority = question,
+        )]
     pub bounty_ata: Box<InterfaceAccount<'info, TokenAccount>>, // reward pool
 
     pub token_program: Interface<'info, TokenInterface>,
@@ -84,7 +84,11 @@ impl<'info> Ask<'info> {
         callback_discriminator: [u8; 8],
     ) -> Result<()> {
         require!(!self.config.freeze, CassieError::ProgramFrozen);
-        require_gte!(bounty, self.config.min_bounty, CassieError::InsufficientBounty);
+        require_gte!(
+            bounty,
+            self.config.min_bounty,
+            CassieError::InsufficientBounty
+        );
 
         let created_at = Clock::get()?.unix_timestamp;
         let answer_deadline = self.config.get_question_deadline(created_at);
