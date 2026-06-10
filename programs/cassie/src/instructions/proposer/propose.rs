@@ -50,7 +50,8 @@ pub struct Propose<'info> {
         payer = proposer,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
         seeds = [REPUTATION_SEED.as_bytes(), proposer.key().as_ref()],
-        bump
+        bump,
+        constraint = reputation.voter == Pubkey::default() || reputation.voter == proposer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 

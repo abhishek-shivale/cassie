@@ -21,19 +21,19 @@ pub struct Settle<'info> {
     #[account(
         mut,
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
 
@@ -61,14 +61,14 @@ pub struct Settle<'info> {
     #[account(
         mut,
         seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
-        bump = dispute.bump,
+        bump,
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
     // present only when the question was resolved by council. settle reads the
     #[account(
         seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
-        bump = council_total.bump,
+        bump,
     )]
     pub council_total: Option<Box<Account<'info, CouncilTotal>>>,
 
@@ -84,6 +84,13 @@ impl<'info> Settle<'info> {
             matches!(self.question.state, QuestionState::Resolved),
             CassieError::InvalidState
         );
+
+        // SOL-006: remaining accounts are forwarded to callback CPI only; not mutated here.
+        // If no callback is configured, no extra accounts should be provided.
+        if self.question.callback_program == Pubkey::default() {
+            require!(remaining.is_empty(), CassieError::CallbackInvocationFailed);
+        }
+
         let now = Clock::get()?.unix_timestamp;
         require!(
             now > self.question.dispute_deadline,

@@ -13,6 +13,9 @@ pub struct CloseQuestion<'info> {
     #[account(mut)]
     pub cranker: Signer<'info>,
 
+    // SOL-011: (1) token account drained before close (see handler drain + close_account below).
+    //          (2) lamports from question + outcome go to creator (verified address).
+    //          (3) pool_ata (token account) emptied via transfer_checked then close_account.
     /// CHECK:
     #[account(mut, address = question.creator)]
     pub creator: UncheckedAccount<'info>,

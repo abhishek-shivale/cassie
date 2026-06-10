@@ -68,6 +68,7 @@ pub struct Dispute<'info> {
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
         seeds = [REPUTATION_SEED.as_bytes(), disputer.key().as_ref()],
         bump,
+        constraint = reputation.voter == Pubkey::default() || reputation.voter == disputer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 

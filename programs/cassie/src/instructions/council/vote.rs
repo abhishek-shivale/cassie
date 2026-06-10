@@ -38,7 +38,8 @@ pub struct Vote<'info> {
         payer = voter,
         space = CouncilTotal::DISCRIMINATOR.len() + CouncilTotal::INIT_SPACE,
         seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
-        bump
+        bump,
+        constraint = council_total.opened_at == 0 || council_total.finalized.is_none() @ CassieError::InvalidState,
     )]
     pub council_total: Box<Account<'info, CouncilTotal>>,
 
@@ -56,7 +57,8 @@ pub struct Vote<'info> {
         payer = voter,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
         seeds = [REPUTATION_SEED.as_bytes(), voter.key().as_ref()],
-        bump
+        bump,
+        constraint = reputation.voter == Pubkey::default() || reputation.voter == voter.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 
