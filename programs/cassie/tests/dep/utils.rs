@@ -26,6 +26,9 @@ pub fn program_id() -> Pubkey {
 pub const ONE_SOL: u64 = 1_000_000_000;
 pub const SLASH_BPS: u64 = 5_000;
 
+pub const MEMO_PROGRAM_ID: Pubkey =
+    Pubkey::from_str_const("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+
 pub const TREASURY_BPS: u64 = 1_000;
 
 pub fn setup() -> (LiteSVM, Keypair) {

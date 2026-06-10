@@ -131,7 +131,7 @@ pub mod cassie {
         ctx.accounts.claim(hash)
     }
 
-    // pub fn close_question(ctx: Context<CloseQuestion>, hash: [u8; 32]) -> Result<()> {
-    //     ctx.accounts.close(hash)
-    // }
+    pub fn close_question(ctx: Context<CloseQuestion>, hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.close(hash)
+    }
 }

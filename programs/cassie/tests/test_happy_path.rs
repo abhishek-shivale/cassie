@@ -1,12 +1,12 @@
 mod dep;
-use dep::*;
 use anchor_lang::prelude::Clock;
+use dep::*;
 
-use anchor_lang::InstructionData;
 use anchor_lang::prelude::*;
+use anchor_lang::InstructionData;
+use cassie::{QUESTION_CONFIG_SEED, SECONDS_PER_DAY, USDC_PUBKEY};
 use solana_keypair::Keypair;
 use solana_signer::Signer;
-use cassie::{QUESTION_CONFIG_SEED, SECONDS_PER_DAY, USDC_PUBKEY};
 #[test]
 fn test_happy_path() -> Result<()> {
     let (mut svm, owner) = setup();
@@ -16,7 +16,6 @@ fn test_happy_path() -> Result<()> {
     // council members
     let mut members = council_members(&mut svm);
     let mut clock = svm.get_sysvar::<Clock>();
-
 
     // mint usdc
     mint_token(&mut svm, USDC_PUBKEY, owner_pubkey);
@@ -36,21 +35,19 @@ fn test_happy_path() -> Result<()> {
     // ask question
     let asker = get_new_account(&mut svm);
     let hash = [0u8; 32];
-    ask_ix(&mut svm, asker, hash);
+    ask_ix(&mut svm, &asker, hash);
 
     // propose answer
-    let proposer = get_new_account(&mut svm);
+    let proposer = &get_new_account(&mut svm);
     let proposer1 = get_new_account(&mut svm);
     propose_answer(&mut svm, proposer, hash, true);
     // propose_answer(&mut svm, proposer1, hash, false);
-
 
     // close proposer
     wrap_unix(&mut svm, &mut clock, 3600 + 10);
     let cranker = get_new_account(&mut svm);
     close_proposer(&mut svm, cranker, hash);
     // you can see data from here
-
 
     // dispute
     let disputer = get_new_account(&mut svm);
@@ -66,5 +63,14 @@ fn test_happy_path() -> Result<()> {
     let cranker = get_new_account(&mut svm);
     finalize_council(&mut svm, hash, cranker);
 
+    // settle question
+    let cranker = get_new_account(&mut svm);
+    settle_question(&mut svm, hash, &cranker, treasury_pubkey);
+
+    // claim question
+    claim_question(&mut svm, hash, proposer);
+
+    // close
+    close(&mut svm, hash, &cranker, &asker, treasury_pubkey);
     Ok(())
 }
