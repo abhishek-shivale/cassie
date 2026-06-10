@@ -15,27 +15,27 @@ pub struct Finalize<'info> {
     #[account(
         mut,
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Account<'info, Question>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Account<'info, OracleConfig>,
 
     #[account(
         mut,
         seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
-        bump = council_total.bump,
+        bump,
     )]
     pub council_total: Account<'info, CouncilTotal>,
 
     #[account(
         mut,
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Account<'info, Outcome>,
 }

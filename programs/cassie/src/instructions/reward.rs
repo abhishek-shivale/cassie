@@ -20,33 +20,33 @@ pub struct ClaimReward<'info> {
 
     #[account(
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
     #[account(
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
 
     #[account(
         mut,
         seeds = [ANSWER_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
-        bump = answer.bump,
+        bump,
     )]
     pub answer: Option<Box<Account<'info, Answer>>>,
 
     #[account(
         mut,
         seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
-        bump = dispute.bump,
+        bump,
         constraint = dispute.disputer == claimer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
@@ -54,14 +54,14 @@ pub struct ClaimReward<'info> {
     #[account(
         mut,
         seeds = [COUNCIL_VOTE_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
-        bump = council_vote.bump,
+        bump,
     )]
     pub council_vote: Option<Account<'info, CouncilVote>>,
 
     #[account(
         mut,
         seeds = [REPUTATION_SEED.as_bytes(), claimer.key().as_ref()],
-        bump = reputation.bump,
+        bump,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 

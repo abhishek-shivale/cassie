@@ -17,7 +17,7 @@ pub struct Ask<'info> {
 
     #[account(
             seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-            bump = config.bump,
+            bump,
         )]
     pub config: Box<Account<'info, OracleConfig>>,
 

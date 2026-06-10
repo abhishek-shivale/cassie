@@ -21,13 +21,13 @@ pub struct CloseQuestion<'info> {
         mut,
         close = creator,
         seeds = [QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
-        bump = question.bump,
+        bump,
     )]
     pub question: Box<Account<'info, Question>>,
 
     #[account(
         seeds = [ADMIN_CONFIG_SEED.as_bytes()],
-        bump = config.bump,
+        bump,
     )]
     pub config: Box<Account<'info, OracleConfig>>,
 
@@ -35,14 +35,14 @@ pub struct CloseQuestion<'info> {
         mut,
         close = creator,
         seeds = [OUTCOME_SEED.as_bytes(), hash.as_ref()],
-        bump = outcome.bump,
+        bump,
     )]
     pub outcome: Box<Account<'info, Outcome>>,
 
     #[account(
         mut,
         seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
-        bump = council_total.bump,
+        bump,
     )]
     pub council_total: Option<Box<Account<'info, CouncilTotal>>>,
 
