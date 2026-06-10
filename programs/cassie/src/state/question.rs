@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace, Debug)]
 pub struct Question {
     // creator = who creates the question
+    /// CHECK:
     pub creator: Pubkey,
     // hash = the is unique to the on-chain id
     pub hash: [u8; 32],

@@ -1,14 +1,48 @@
-name: Solana Security Scan
+name: CI checks
 
 on:
   push:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
-  security:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Solana Security Standard
-        uses: Copenhagen0x/solana-security-standard@v1.9.0
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.9.1
+
+      - name: Install Solana
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked
+          avm install latest
+          avm use latest
+
+      - name: Build
+        run: anchor build
+
+      - name: Test
+        run: anchor test
+
+  security:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Copenhagen0x/solana-security-standard@v1.9.0
+        with:
+          paths: .
+          fail-on-findings: true
+          upload-sarif: true

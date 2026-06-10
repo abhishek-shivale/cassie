@@ -60,7 +60,6 @@ pub struct Vote<'info> {
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 
-
     #[account(
         mut,
         associated_token::mint = usdc_mint,
@@ -78,7 +77,6 @@ pub struct Vote<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-
 }
 
 impl<'info> Vote<'info> {
@@ -106,20 +104,24 @@ impl<'info> Vote<'info> {
         if self.council_total.opened_at == 0 {
             self.council_total.opened_at = now;
             self.council_total.bump = bumps.council_total;
+            self.council_total.dispute_time =
+                self.council_total.opened_at + self.config.default_council_window;
             self.question.state = QuestionState::Council;
+        } else {
+            // council window still be open
+            require!(
+                now <= self.council_total.dispute_time,
+                CassieError::CouncilWindowClosed
+            );
         }
-
-        // council window must still be open
-        require!(
-            now <= self.council_total.opened_at + self.config.default_council_window,
-            CassieError::CouncilWindowClosed
-        );
 
         // tally
         if vote {
             self.council_total.yes_count = self.council_total.yes_count.checked_add(1).unwrap();
+            self.council_total.total_yes_stake += bond as u128;
         } else {
             self.council_total.no_count = self.council_total.no_count.checked_add(1).unwrap();
+            self.council_total.total_no_stake += bond as u128;
         }
 
         self.council_vote.set_inner(CouncilVote {
@@ -128,6 +130,7 @@ impl<'info> Vote<'info> {
             voted_at: now,
             claimed: false,
             bump: bumps.council_vote,
+            stake: bond,
         });
 
         // ensure the voter has a reputation account for the eventual claim.

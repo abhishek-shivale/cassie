@@ -13,7 +13,7 @@ pub struct CloseQuestion<'info> {
     #[account(mut)]
     pub cranker: Signer<'info>,
 
-    /// CHECK: rent receiver; must equal the question creator.
+    /// CHECK:
     #[account(mut, address = question.creator)]
     pub creator: UncheckedAccount<'info>,
 
@@ -99,7 +99,6 @@ impl<'info> CloseQuestion<'info> {
             )?;
         }
 
-        // close the now-empty pool ATA, returning its rent to the creator.
         close_account(CpiContext::new_with_signer(
             self.token_program.key(),
             CloseAccount {
@@ -109,12 +108,6 @@ impl<'info> CloseQuestion<'info> {
             },
             &[seeds],
         ))?;
-
-        // council tally (if any) is closed manually; question + outcome are
-        // closed by the `close = creator` constraints.
-        if let Some(council_total) = self.council_total.as_ref() {
-            council_total.close(self.creator.to_account_info())?;
-        }
 
         Ok(())
     }

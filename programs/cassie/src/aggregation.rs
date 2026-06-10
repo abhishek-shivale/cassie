@@ -53,7 +53,7 @@ pub fn resolve_or_escalate(
     } else {
         AggregationResult::Resolved {
             result: yes_weight > no_weight,
-            resolver: Resolver::Weighted,
+            resolver: Resolver::Optimistic,
         }
     }
 }
@@ -67,7 +67,7 @@ pub struct RewardSplit {
 
 pub fn compute_reward_split(
     bounty: u64,
-    loser_total_stake: u64,
+    loser_total_stake: u128,
     slash_bps: u16,
     treasury_bps: u16,
 ) -> RewardSplit {
@@ -196,14 +196,14 @@ mod test {
     }
 
     #[test]
-    fn lopsided_resolves_weighted() {
+    fn lopsided_resolves_optimistic() {
         // 92/8 split, minority 8% < 35%
         let r = resolve_or_escalate(920, 80, 10, 3500);
         assert_eq!(
             r,
             AggregationResult::Resolved {
                 result: true,
-                resolver: Resolver::Weighted
+                resolver: Resolver::Optimistic
             }
         );
     }

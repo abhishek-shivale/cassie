@@ -52,14 +52,13 @@ impl<'info> Finalize<'info> {
 
         // not already finalized
         require!(
-            self.council_total.finalized_at.is_none(),
+            self.council_total.finalized.is_none(),
             CassieError::InvalidState
         );
 
         let now = Clock::get()?.unix_timestamp;
 
-        let deadline =
-            self.council_total.opened_at + self.config.default_council_window;
+        let deadline = self.council_total.opened_at + self.config.default_council_window;
 
         require!(now > deadline, CassieError::CouncilWindowActive);
 
@@ -69,17 +68,21 @@ impl<'info> Finalize<'info> {
             .yes_count
             .checked_add(self.council_total.no_count)
             .unwrap();
-        require!(
-            total_votes >= self.config.quorum,
-            CassieError::QuorumNotReached
-        );
+
+        if total_votes >= self.config.quorum {
+            self.council_total.dispute_time += SECONDS_PER_DAY;
+            require!(
+                total_votes >= self.config.quorum,
+                CassieError::QuorumNotReached
+            );
+        }
 
         // majority verdict (tie -> no)
         let verdict = self.council_total.yes_count > self.council_total.no_count;
         let now = Clock::get()?.unix_timestamp;
 
         // council is final
-        self.council_total.finalized_at = Some(verdict);
+        self.council_total.finalized = Some(verdict);
         self.question.state = QuestionState::Resolved;
 
         // overwrite outcome with the council verdict
