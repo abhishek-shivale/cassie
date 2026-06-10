@@ -1,26 +1,27 @@
-name: CI checks
+name: CI Checks
 
 on:
   push:
+    branches:
+      - "**"
   pull_request:
 
 permissions:
   contents: read
-  security-events: write
   actions: read
+  security-events: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
   security:
-    needs: build
+    name: Security Scan
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: Copenhagen0x/solana-security-standard@v1.9.0
+      - name: Run Solana Security Standard
+        uses: Copenhagen0x/solana-security-standard@v1.9.0
         with:
           paths: .
           fail-on-findings: true
