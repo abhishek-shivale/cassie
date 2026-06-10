@@ -61,12 +61,7 @@ impl<'info> Finalize<'info> {
         let deadline =
             self.council_total.opened_at + self.config.default_council_window;
 
-        msg!("now: {}", now);
-        msg!("opened_at: {}", self.council_total.opened_at);
-        msg!("window: {}", self.config.default_council_window);
-        msg!("deadline: {}", deadline);
-
-        require!(now >= deadline, CassieError::CouncilWindowActive);
+        require!(now > deadline, CassieError::CouncilWindowActive);
 
         // quorum: enough members must have voted
         let total_votes = self

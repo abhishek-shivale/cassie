@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-cassie = "5sU2QBvow11aj1m6z6DdqpsaqVuh84e8RWpQD5njdgYM"
+cassie = "377f8fpEExurtJNPfjNF7sTLEL9ZLCnCC4FCwDxU6BFz"
 
 [provider]
 cluster = "localnet"

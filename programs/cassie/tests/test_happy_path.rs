@@ -1,14 +1,12 @@
-mod utils;
+mod dep;
+use dep::*;
 use anchor_lang::prelude::Clock;
-use utils::*;
-mod instructions;
 
 use anchor_lang::InstructionData;
 use anchor_lang::prelude::*;
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 use cassie::{QUESTION_CONFIG_SEED, SECONDS_PER_DAY, USDC_PUBKEY};
-use instructions::*;
 #[test]
 fn test_happy_path() -> Result<()> {
     let (mut svm, owner) = setup();
@@ -64,11 +62,7 @@ fn test_happy_path() -> Result<()> {
     council_vote(&mut svm, hash, members);
 
     // finalize council
-    // let clock: Clock = svm.get_sysvar();
-    println!("timestamp before {:?}", clock.unix_timestamp);
-    wrap_unix(&mut svm, &mut clock, 1000);
-    // let clock: Clock = svm.get_sysvar();
-    println!("timestamp after {:?}", clock.unix_timestamp);
+    wrap_unix(&mut svm, &mut clock, SECONDS_PER_DAY + 1);
     let cranker = get_new_account(&mut svm);
     finalize_council(&mut svm, hash, cranker);
 

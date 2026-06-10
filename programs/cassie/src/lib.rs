@@ -13,7 +13,7 @@ pub use events::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("5sU2QBvow11aj1m6z6DdqpsaqVuh84e8RWpQD5njdgYM");
+declare_id!("377f8fpEExurtJNPfjNF7sTLEL9ZLCnCC4FCwDxU6BFz");
 
 #[program]
 pub mod cassie {

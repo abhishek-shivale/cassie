@@ -31,7 +31,7 @@ pub const TREASURY_BPS: u64 = 1_000;
 pub fn setup() -> (LiteSVM, Keypair) {
     let mut svm = LiteSVM::new();
     let payer = Keypair::new();
-    let bytes = include_bytes!("../../../target/deploy/cassie.so");
+    let bytes = include_bytes!("../../../../target/deploy/cassie.so");
     svm.add_program(cassie::id(), bytes).unwrap();
     svm.airdrop(&payer.pubkey(), ONE_SOL).unwrap();
     (svm, payer)
@@ -109,13 +109,25 @@ pub fn send_ix(
     payer: &Keypair,
     signers: &[&Keypair],
 ) -> litesvm::types::TransactionResult {
-    let blockhash = svm.latest_blockhash();
-    let msg = Message::new_with_blockhash(&[ix], Some(&payer.pubkey()), &blockhash);
-    let tx = VersionedTransaction::try_new(VersionedMessage::Legacy(msg), signers).unwrap();
-    let result = svm.simulate_transaction(tx.clone());
-    let res = svm.send_transaction(tx);
-        println!("{:?}", result?.meta);
-    res
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        signers,
+        svm.latest_blockhash(),
+    );
+    let result = svm.send_transaction(tx);
+    let logs  = match &result {
+        Ok(x) => {&x.logs},
+        Err(e) => {
+            &e.meta.logs
+        }
+    };
+
+    for log in logs {
+        println!("Logs: -> {}", log)
+    }
+
+    result
 }
 
 pub fn wrap_unix(svm: &mut LiteSVM, clock: &mut Clock, unix_timestamp: i64) {
@@ -139,6 +151,8 @@ pub fn get_pda(seed: &[&[u8]]) -> Pubkey {
 }
 
 use anchor_lang::AccountDeserialize;
+use solana_transaction::Transaction;
+
 pub fn account_data<T>(svm: &mut LiteSVM, acc: Pubkey)
 where
     T: AccountDeserialize + Debug,
