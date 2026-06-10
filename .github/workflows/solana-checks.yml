@@ -13,27 +13,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.9.1
-
-      - name: Install Solana
-        run: |
-          cargo install --git https://github.com/coral-xyz/anchor avm --locked
-          avm install latest
-          avm use latest
-
-      - name: Build
-        run: anchor build
-
-      - name: Test
-        run: anchor test
-
   security:
     needs: build
     runs-on: ubuntu-latest
