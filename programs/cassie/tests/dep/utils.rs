@@ -1,17 +1,14 @@
 #![allow(dead_code)]
 
-use anchor_lang::prelude::{AccountInfo, Clock, Pubkey};
+use anchor_lang::prelude::{Clock, Pubkey};
 use anchor_lang::solana_program::instruction::Instruction;
-use anchor_lang::Accounts;
-use cassie::{CouncilTotal, Question, USDC_PUBKEY};
+use cassie::USDC_PUBKEY;
 use litesvm::LiteSVM;
 use solana_account::Account;
 use solana_keypair::Keypair;
-use solana_message::{Message, VersionedMessage};
 use solana_program_option::COption;
 use solana_program_pack::Pack;
 use solana_signer::Signer;
-use solana_transaction::versioned::VersionedTransaction;
 use spl_associated_token_account_interface::address::get_associated_token_address;
 use spl_token_interface::{
     state::{Account as SplTokenAccount, AccountState, Mint},
@@ -165,4 +162,9 @@ where
     let data = T::try_deserialize(&mut account.data.as_slice()).unwrap();
 
     println!("account data: {:?}", data);
+}
+
+pub fn get_account_data<T: AccountDeserialize>(svm: &LiteSVM, acc: &Pubkey) -> T {
+    let account = svm.get_account(acc).unwrap();
+    T::try_deserialize(&mut account.data.as_slice()).unwrap()
 }

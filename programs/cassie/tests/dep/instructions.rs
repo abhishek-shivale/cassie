@@ -167,7 +167,7 @@ pub fn propose_answer(svm: &mut LiteSVM, proposer: &Keypair, hash: [u8; 32], sid
     assert!(res.is_ok(), "propose should be ok {:?}.", res.err());
 }
 
-pub fn dispute(svm: &mut LiteSVM, dispute: Keypair, hash: [u8; 32]) {
+pub fn dispute(svm: &mut LiteSVM, dispute: &Keypair, hash: [u8; 32]) {
     let accounts = cassie::accounts::Dispute {
         disputer: dispute.pubkey(),
         reputation: get_pda(&[REPUTATION_SEED.as_ref(), dispute.pubkey().as_ref()]),
@@ -320,7 +320,44 @@ pub fn settle_question(
     assert!(res.is_ok(), "settle question should be ok {:?}.", res.err());
 }
 
-pub fn claim_question(svm: &mut LiteSVM, hash: [u8; 32], claimer: &Keypair) {
+pub fn claim_question(svm: &mut LiteSVM, hash: [u8; 32], claimer: &Keypair, is_disputer: bool) {
+    let data = cassie::instruction::ClaimReward { hash }.data();
+
+    let dispute = if is_disputer {
+        Some(get_pda(&[DISPUTE_SEED.as_bytes(), hash.as_ref()]))
+    } else {
+        None
+    };
+
+    let account = cassie::accounts::ClaimReward {
+        question: get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]),
+        config: get_pda(&[ADMIN_CONFIG_SEED.as_ref()]),
+        claimer: claimer.pubkey(),
+        outcome: get_pda(&[OUTCOME_SEED.as_ref(), hash.as_ref()]),
+        usdc_mint: USDC_PUBKEY,
+        pool_ata: ata(
+            get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]),
+            USDC_PUBKEY,
+        ),
+        claimer_ata: ata(claimer.pubkey(), USDC_PUBKEY),
+        dispute,
+        token_program: TOKEN_PROGRAM_ID,
+        reputation: get_pda(&[REPUTATION_SEED.as_ref(), claimer.pubkey().as_ref()]),
+        council_vote: Option::from(None),
+        answer: Some(get_pda(&[
+            ANSWER_SEED.as_ref(),
+            hash.as_ref(),
+            claimer.pubkey().as_ref(),
+        ])),
+    }
+    .to_account_metas(None);
+
+    let ix = init_ix(account, data);
+    let res = send_ix(svm, ix, &claimer, &[&claimer]);
+    assert!(res.is_ok(), "claim question should be ok {:?}.", res.err());
+}
+
+pub fn claim_dispute(svm: &mut LiteSVM, hash: [u8; 32], claimer: &Keypair) {
     let data = cassie::instruction::ClaimReward { hash }.data();
 
     let account = cassie::accounts::ClaimReward {
@@ -338,21 +375,21 @@ pub fn claim_question(svm: &mut LiteSVM, hash: [u8; 32], claimer: &Keypair) {
         token_program: TOKEN_PROGRAM_ID,
         reputation: get_pda(&[REPUTATION_SEED.as_ref(), claimer.pubkey().as_ref()]),
         council_vote: Option::from(None),
-        answer: Some(get_pda(&[
-            ANSWER_SEED.as_ref(),
-            hash.as_ref(),
-            claimer.pubkey().as_ref(),
-        ])),
+        answer: None,
     }
     .to_account_metas(None);
 
     let ix = init_ix(account, data);
     let res = send_ix(svm, ix, &claimer, &[&claimer]);
-    assert!(res.is_ok(), "claim question should be ok {:?}.", res.err());
+    assert!(res.is_ok(), "claim dispute should be ok {:?}.", res.err());
 }
 
 pub fn close(svm: &mut LiteSVM, hash: [u8; 32], cranker: &Keypair, questioner: &Keypair, treasury_pubkey: Pubkey) {
     let data = cassie::instruction::CloseQuestion { hash }.data();
+    let treasury_ata_addr = ata(treasury_pubkey, USDC_PUBKEY);
+    if svm.get_account(&treasury_ata_addr).is_none() {
+        add_ata(svm, treasury_pubkey, ONE_SOL);
+    }
     let account = cassie::accounts::CloseQuestion {
         question: get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]),
         config: get_pda(&[ADMIN_CONFIG_SEED.as_ref()]),
@@ -360,7 +397,7 @@ pub fn close(svm: &mut LiteSVM, hash: [u8; 32], cranker: &Keypair, questioner: &
         creator: questioner.pubkey(),
         council_total: Some(get_pda(&[COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()])),
         outcome: get_pda(&[OUTCOME_SEED.as_ref(), hash.as_ref()]),
-        treasury_ata: add_ata(svm, treasury_pubkey, ONE_SOL),
+        treasury_ata: treasury_ata_addr,
         usdc_mint: USDC_PUBKEY,
         pool_ata: ata(
             get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]),
