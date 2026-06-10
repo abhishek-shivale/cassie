@@ -194,8 +194,11 @@ impl<'info> ClaimReward<'info> {
     }
 
     fn transfer_payout(&self, hash: [u8; 32], amount: u64) -> Result<()> {
-        let bump = [self.question.bump];
-        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
+        let (_, canonical_bump) = Pubkey::find_program_address(
+            &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            &crate::id(),
+        );
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &[canonical_bump]];
         transfer_checked(
             CpiContext::new_with_signer(
                 self.token_program.key(),

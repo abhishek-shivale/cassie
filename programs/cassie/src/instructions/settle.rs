@@ -85,8 +85,7 @@ impl<'info> Settle<'info> {
             CassieError::InvalidState
         );
 
-        // SOL-006: remaining accounts are forwarded to callback CPI only; not mutated here.
-        // If no callback is configured, no extra accounts should be provided.
+        // SOL-006: remaining forwarded to callback CPI only; not mutated here.
         if self.question.callback_program == Pubkey::default() {
             require!(remaining.is_empty(), CassieError::CallbackInvocationFailed);
         }
@@ -254,8 +253,11 @@ impl<'info> Settle<'info> {
         if amount == 0 {
             return Ok(());
         }
-        let bump = [self.question.bump];
-        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
+        let (_, canonical_bump) = Pubkey::find_program_address(
+            &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            &crate::id(),
+        );
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &[canonical_bump]];
         transfer_checked(
             CpiContext::new_with_signer(
                 self.token_program.key(),
@@ -291,6 +293,7 @@ impl<'info> Settle<'info> {
         data.extend_from_slice(&hash);
         data.push(self.outcome.result as u8);
 
+        // SOL-006: remaining accounts forwarded to callback CPI; runtime enforces signer/writable.
         let metas: Vec<AccountMeta> = remaining
             .iter()
             .map(|a| AccountMeta {
@@ -306,13 +309,19 @@ impl<'info> Settle<'info> {
             data,
         };
 
+        // Authority: question creator authorized this callback by setting
+        // callback_program + callback_discriminator at ask_question time (signed).
+        // The question PDA (verified by Anchor seeds constraint) signs the CPI.
         require!(
             target != Pubkey::default(),
             CassieError::CallbackInvocationFailed
         );
 
-        let bump = [self.question.bump];
-        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
+        let (_, canonical_bump) = Pubkey::find_program_address(
+            &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            &crate::id(),
+        );
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &[canonical_bump]];
 
         let mut infos: Vec<AccountInfo> = Vec::with_capacity(1 + remaining.len());
         infos.push(program_ai.to_account_info());

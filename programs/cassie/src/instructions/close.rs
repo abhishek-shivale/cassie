@@ -81,8 +81,11 @@ impl<'info> CloseQuestion<'info> {
             CassieError::CloseGraceActive
         );
 
-        let bump = [self.question.bump];
-        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
+        let (_, canonical_bump) = Pubkey::find_program_address(
+            &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref()],
+            &crate::id(),
+        );
+        let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &[canonical_bump]];
 
         let remaining = self.pool_ata.amount;
         if remaining > 0 {
