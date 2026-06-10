@@ -67,7 +67,7 @@ pub struct Dispute<'info> {
         payer = disputer,
         space = Reputation::DISCRIMINATOR.len() + Reputation::INIT_SPACE,
         seeds = [REPUTATION_SEED.as_bytes(), disputer.key().as_ref()],
-        bump
+        bump,
     )]
     pub reputation: Box<Account<'info, Reputation>>,
 

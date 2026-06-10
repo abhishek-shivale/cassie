@@ -277,6 +277,7 @@ impl<'info> Settle<'info> {
             target,
             CassieError::CallbackInvocationFailed
         );
+        require!(program_ai.executable, CassieError::CallbackInvocationFailed);
 
         let mut data = Vec::with_capacity(8 + 32 + 1);
         data.extend_from_slice(&self.question.callback_discriminator);
@@ -297,6 +298,11 @@ impl<'info> Settle<'info> {
             accounts: metas,
             data,
         };
+
+        require!(
+            target != Pubkey::default(),
+            CassieError::CallbackInvocationFailed
+        );
 
         let bump = [self.question.bump];
         let seeds: &[&[u8]] = &[QUESTION_CONFIG_SEED.as_bytes(), hash.as_ref(), &bump];
