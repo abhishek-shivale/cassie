@@ -1,0 +1,13 @@
+signer "deployer" {
+    keypair = "./target/deploy/cassie-keypair.json"
+}
+
+action "deploy_program" {
+  using = signer.deployer
+
+  program_path = "./target/deploy/cassie.so"
+}
+
+output "program_id" {
+  value = action.deploy_program.program_id
+}
