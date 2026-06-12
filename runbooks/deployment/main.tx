@@ -1,0 +1,14 @@
+################################################################
+# Manage cassie deployment through Crypto Infrastructure as Code
+################################################################
+
+addon "svm" {
+  rpc_api_url = input.rpc_api_url   # injected by txtx.yml
+  network_id  = input.network_id    # injected by txtx.yml
+}
+
+action "deploy_cassie" "svm::deploy_program" {
+  program   = svm::get_program_from_anchor_project("cassie")
+  authority = signer.authority      # defined in signers.*.tx
+  payer     = signer.payer          # defined in signers.*.tx
+}

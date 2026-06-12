@@ -1,0 +1,63 @@
+
+action "cassie_council_finalized" "svm::deploy_subgraph" {
+    program_id = action.deploy_cassie.program_id
+    program_idl = action.deploy_cassie.program_idl
+    block_height = 0 // action.deploy_cassie.block_height
+    event {
+        name = "CouncilFinalized"
+    }
+}
+
+action "cassie_council_voted" "svm::deploy_subgraph" {
+    program_id = action.deploy_cassie.program_id
+    program_idl = action.deploy_cassie.program_idl
+    block_height = 0 // action.deploy_cassie.block_height
+    event {
+        name = "CouncilVoted"
+    }
+}
+
+action "cassie_create_question" "svm::deploy_subgraph" {
+    program_id = action.deploy_cassie.program_id
+    program_idl = action.deploy_cassie.program_idl
+    block_height = 0 // action.deploy_cassie.block_height
+    event {
+        name = "CreateQuestion"
+    }
+}
+
+action "cassie_dispute_created" "svm::deploy_subgraph" {
+    program_id = action.deploy_cassie.program_id
+    program_idl = action.deploy_cassie.program_idl
+    block_height = 0 // action.deploy_cassie.block_height
+    event {
+        name = "DisputeCreated"
+    }
+}
+
+action "cassie_proposed_answer" "svm::deploy_subgraph" {
+    program_id = action.deploy_cassie.program_id
+    program_idl = action.deploy_cassie.program_idl
+    block_height = 0 // action.deploy_cassie.block_height
+    event {
+        name = "ProposedAnswer"
+    }
+}
+
+action "cassie_proposers_closed" "svm::deploy_subgraph" {
+    program_id = action.deploy_cassie.program_id
+    program_idl = action.deploy_cassie.program_idl
+    block_height = 0 // action.deploy_cassie.block_height
+    event {
+        name = "ProposersClosed"
+    }
+}
+
+action "cassie_question_settled" "svm::deploy_subgraph" {
+    program_id = action.deploy_cassie.program_id
+    program_idl = action.deploy_cassie.program_idl
+    block_height = 0 // action.deploy_cassie.block_height
+    event {
+        name = "QuestionSettled"
+    }
+}

@@ -14,3 +14,8 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "cargo test"
+
+[surfpool]
+runbooks = [
+    "./runbooks/deployment/main.tx"
+]
