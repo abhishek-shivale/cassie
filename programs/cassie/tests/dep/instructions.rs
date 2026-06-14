@@ -294,8 +294,22 @@ pub fn settle_question(
     hash: [u8; 32],
     cranker: &Keypair,
     treasury_pubkey: Pubkey,
+    has_dispute: bool,
+    is_council: bool,
 ) {
     let data = cassie::instruction::SettleQuestion { hash }.data();
+
+    let dispute = if has_dispute {
+        Some(get_pda(&[DISPUTE_SEED.as_bytes(), hash.as_ref()]))
+    } else {
+        None
+    };
+
+    let council_total = if is_council {
+        Some(get_pda(&[COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()]))
+    } else {
+        None
+    };
 
     let account = cassie::accounts::Settle {
         question: get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]),
@@ -308,8 +322,8 @@ pub fn settle_question(
             USDC_PUBKEY,
         ),
         treasury_ata: add_ata(svm, treasury_pubkey, ONE_SOL),
-        council_total: Some(get_pda(&[COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()])),
-        dispute: Some(get_pda(&[DISPUTE_SEED.as_bytes(), hash.as_ref()])),
+        council_total,
+        dispute,
         token_program: TOKEN_PROGRAM_ID,
         callback_program: Some(MEMO_PROGRAM_ID),
     }

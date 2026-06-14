@@ -45,16 +45,11 @@ pub struct ClaimReward<'info> {
 
     #[account(
         mut,
-        seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
-        bump,
-        constraint = dispute.disputer == claimer.key() @ CassieError::UnauthorizedAdmin,
     )]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
     #[account(
         mut,
-        seeds = [COUNCIL_VOTE_SEED.as_bytes(), hash.as_ref(), claimer.key().as_ref()],
-        bump,
     )]
     pub council_vote: Option<Account<'info, CouncilVote>>,
 
