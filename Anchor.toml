@@ -9,8 +9,8 @@ skip-lint = false
 cassie = "8XBYSkbwTEonoFRtqaU8PqbwyXaXvzDT1bApyUdRbrwf"
 
 [provider]
-cluster = "devnet"
-wallet = "~/.config/solana/f1.json"
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "cargo test"
