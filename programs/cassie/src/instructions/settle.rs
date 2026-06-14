@@ -58,18 +58,14 @@ pub struct Settle<'info> {
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     // present only if the question was disputed. settle marks won/lost here.
-    #[account(
-        mut,
-        seeds = [DISPUTE_SEED.as_bytes(), hash.as_ref()],
-        bump,
-    )]
+    // NOTE: No seeds/bump constraint here — Anchor would try to deserialize the account
+    // even when it is absent (AccountNotInitialized). We verify the PDA manually in settle().
+    #[account(mut)]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
     // present only when the question was resolved by council. settle reads the
-    #[account(
-        seeds = [COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
-        bump,
-    )]
+    // NOTE: No seeds/bump constraint here — same reason as dispute above; Anchor fails with
+    // AccountNotInitialized when the account doesn't exist. PDA verified manually in settle().
     pub council_total: Option<Box<Account<'info, CouncilTotal>>>,
 
     pub callback_program: Option<UncheckedAccount<'info>>,
@@ -99,6 +95,33 @@ impl<'info> Settle<'info> {
             !self.question.has_dispute || self.dispute.is_some(),
             CassieError::MissingDisputeAccount
         );
+
+        // Manually verify the dispute PDA when present (seeds/bump removed from constraint
+        // because Anchor fails with AccountNotInitialized when the account doesn't exist).
+        if let Some(dispute_acc) = &self.dispute {
+            let (expected_pda, _) = Pubkey::find_program_address(
+                &[DISPUTE_SEED.as_bytes(), hash.as_ref()],
+                &crate::id(),
+            );
+            require_keys_eq!(
+                dispute_acc.key(),
+                expected_pda,
+                CassieError::MissingDisputeAccount
+            );
+        }
+
+        // Manually verify the council_total PDA when present (same reason as dispute above).
+        if let Some(ct_acc) = &self.council_total {
+            let (expected_pda, _) = Pubkey::find_program_address(
+                &[COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()],
+                &crate::id(),
+            );
+            require_keys_eq!(
+                ct_acc.key(),
+                expected_pda,
+                CassieError::MissingCouncilAccount
+            );
+        }
 
         let result = self.outcome.result;
         let (correct_answer_count, loser_answer_stake) = if result {
@@ -294,14 +317,15 @@ impl<'info> Settle<'info> {
         data.push(self.outcome.result as u8);
 
         // SOL-006: remaining accounts forwarded to callback CPI; runtime enforces signer/writable.
-        let metas: Vec<AccountMeta> = remaining
-            .iter()
-            .map(|a| AccountMeta {
+        // First remaining account is callback's payer; signs via question PDA invoke_signed seeds.
+        let mut metas: Vec<AccountMeta> = Vec::with_capacity(remaining.len());
+        for (i, a) in remaining.iter().enumerate() {
+            metas.push(AccountMeta {
                 pubkey: a.key(),
-                is_signer: a.is_signer,
+                is_signer: i == 0 || a.is_signer,
                 is_writable: a.is_writable,
-            })
-            .collect();
+            });
+        }
 
         let ix = Instruction {
             program_id: target,

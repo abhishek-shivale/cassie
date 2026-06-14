@@ -315,7 +315,7 @@ fn test_happy_path() -> Result<()> {
     add_ata(&mut svm, treasury_pubkey, ONE_SOL);
     let pre_treasury = token_balance(&svm, &treasury_ata);
     let pre_pool = token_balance(&svm, &pool_ata);
-    settle_question(&mut svm, hash, &cranker3, treasury_pubkey);
+    settle_question(&mut svm, hash, &cranker3, treasury_pubkey, true, true);
 
     let q: Question = get_account_data(&svm, &question_pda);
     assert_eq!(

@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-cassie = "377f8fpEExurtJNPfjNF7sTLEL9ZLCnCC4FCwDxU6BFz"
+cassie = "8XBYSkbwTEonoFRtqaU8PqbwyXaXvzDT1bApyUdRbrwf"
 
 [provider]
 cluster = "localnet"
@@ -16,6 +16,8 @@ wallet = "~/.config/solana/id.json"
 test = "cargo test"
 
 [surfpool]
-runbooks = [
-    "./runbooks/deployment/main.tx"
-]
+startup_wait = 5000
+shutdown_wait = 2000
+rpc_port = 8899
+host = "127.0.0.1"
+runbooks = ["./runbooks/deployment/main.tx"]

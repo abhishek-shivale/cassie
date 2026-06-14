@@ -49,7 +49,7 @@ pub fn mint_token(svm: &mut LiteSVM, pubkey: Pubkey, authority: Pubkey) {
     let mint = Mint {
         mint_authority: COption::Some(authority),
         supply: 0,
-        decimals: 2,
+        decimals: 6,
         is_initialized: true,
         freeze_authority: COption::None,
     };
