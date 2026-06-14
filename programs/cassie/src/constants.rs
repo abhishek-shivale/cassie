@@ -3,10 +3,10 @@ use anchor_lang::prelude::*;
 pub const MAX_COUNCIL_MEMBER: usize = 9;
 
 // v1: dispute bond + min stake fixed at 750 USDC
-pub const MIN_DISPUTE_BOND: u64 = 750;
-pub const MIN_STAKE: u64 = 750;
+pub const MIN_DISPUTE_BOND: u64 = 5;
+pub const MIN_STAKE: u64 = 5;
 
-pub const TREASURY_BPS: u64 = 750;
+pub const TREASURY_BPS: u64 = 5;
 
 pub const DISPUTE_REWARD_BPS: u64 = 2500;
 
@@ -64,5 +64,5 @@ pub const SECONDS_PER_DAY: i64 = 86_400;
 // funds swept to the treasury.
 pub const CLOSE_GRACE: i64 = 86_400;
 
-pub const USDC_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // mainnet
-// pub const USDC_PUBKEY: Pubkey = pubkey!("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"); // devnet
+// pub const USDC_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // mainnet
+pub const USDC_PUBKEY: Pubkey = pubkey!("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"); // devnet

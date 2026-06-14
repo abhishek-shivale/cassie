@@ -4,8 +4,8 @@ use anchor_lang::prelude::{system_program, AccountMeta, Pubkey};
 use anchor_lang::{InstructionData, ToAccountMetas};
 use cassie::{
     CouncilTotal, OracleConfig, ADMIN_CONFIG_SEED, ANSWER_SEED, COUNCIL_TOTAL_SEED,
-    COUNCIL_VOTE_SEED, DISPUTE_SEED, OUTCOME_SEED, QUESTION_CONFIG_SEED, REPUTATION_SEED,
-    USDC_PUBKEY,
+    COUNCIL_VOTE_SEED, DISPUTE_SEED, MIN_DISPUTE_BOND, MIN_STAKE, OUTCOME_SEED,
+    QUESTION_CONFIG_SEED, REPUTATION_SEED, USDC_PUBKEY,
 };
 use litesvm::LiteSVM;
 use solana_keypair::Keypair;
@@ -135,7 +135,7 @@ pub fn ask_ix(svm: &mut LiteSVM, asker: &Keypair, hash: [u8; 32]) {
 pub fn propose_answer(svm: &mut LiteSVM, proposer: &Keypair, hash: [u8; 32], side: bool) {
     let data = cassie::instruction::Propose {
         hash,
-        stake: 750,
+        stake: MIN_STAKE,
         side,
     }
     .data();
@@ -189,7 +189,7 @@ pub fn dispute(svm: &mut LiteSVM, dispute: &Keypair, hash: [u8; 32]) {
 
     let data = cassie::instruction::Dispute {
         hash,
-        bond: 750,
+        bond: MIN_DISPUTE_BOND,
         claimed_outcome: false,
         reason_hash: [0u8; 128],
     }
@@ -251,7 +251,7 @@ fn vote(svm: &mut LiteSVM, hash: [u8; 32], members: &Keypair, vote: bool) {
 
     let data = cassie::instruction::CouncilVote {
         hash,
-        bond: 750,
+        bond: MIN_STAKE,
         vote,
     }
     .data();

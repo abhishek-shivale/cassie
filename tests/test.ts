@@ -232,13 +232,13 @@ describe("cassie", () => {
       expect(q.state).to.deep.equal({ answering: {} });
       expect(Number(q.yesCount)).to.equal(1);
       expect(Number(q.noCount)).to.equal(0);
-      expect(String(q.totalYesWeight)).to.equal("750");
-      expect(String(q.totalYesStake)).to.equal("750");
+      expect(String(q.totalYesWeight)).to.equal("5");
+      expect(String(q.totalYesStake)).to.equal("5");
   
       const a = await fetchAnswer(hash, proposer.publicKey);
       expect(a.answerer.toBase58()).to.equal(proposer.publicKey.toBase58());
       expect(a.side).to.equal(true);
-      expect(String(a.stake)).to.equal("750");
+      expect(String(a.stake)).to.equal("5");
       expect(a.claimed).to.equal(false);
     });
   
@@ -289,7 +289,7 @@ describe("cassie", () => {
       await sendIx(ix, proposer);
   
       const post = await tokenBalance(ataFor(proposer.publicKey));
-      const expectedPayout = 750n + 65n;
+      const expectedPayout = 5n + 65n;
       expect(post - pre).to.equal(expectedPayout);
   
       // answer account closed by claim reward instruction
