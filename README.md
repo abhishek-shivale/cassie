@@ -137,7 +137,8 @@ Frontend
 
 Deployment
 - This repository includes runbooks (runbooks/deployment) to automate deployment with Surfpool. Use Surfpool to run them:
-  - surfpool run deployment
+  - surfpool run 
+  - surfpool run deployment --env localnet 
 - There is also a TypeScript migration script in migrations/deploy.ts for program deployment and upgrades.
 
 Contributing
@@ -149,6 +150,3 @@ License
 
 Contact
 - For questions or help running the project locally, open an issue or contact the repository maintainers.
-
-—
-This README is intended to give developers and contributors a clear starting point. If you want I can add specific developer scripts, examples of posting a question via CLI, or a small integration test demonstrating the full ask/answer/dispute flow.
