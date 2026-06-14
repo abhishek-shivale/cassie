@@ -7,7 +7,7 @@ export const CALLBACK_EXAMPLE_PROGRAM_ID = new PublicKey(
   "DANGHof54KqrvGnipP3Hm8whXXifmaWKQwYYH533jVaq"
 );
 
-export const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+export const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
 export const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 export const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
   "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
@@ -48,8 +48,8 @@ export const COUNCIL_BPS = 1500;
 export const DIVERGENCE_BPS = 3500;
 
 export const MIN_BOUNTY = 10n;
-export const MIN_STAKE = 750n;
-export const MIN_DISPUTE_BOND = 750n;
+export const MIN_STAKE = 5n;
+export const MIN_DISPUTE_BOND = 5n;
 export const BPS_DENOMINATOR = 10_000n;
 
 export const SECONDS_PER_DAY = 86_400;

@@ -6,7 +6,8 @@ use anchor_lang::prelude::*;
 use cassie::{
     Answer, CouncilTotal, DisputeConfig, OracleConfig, Outcome, Question, QuestionState,
     Reputation, Resolver, ADMIN_CONFIG_SEED, ANSWER_SEED, COUNCIL_TOTAL_SEED, DISPUTE_SEED,
-    MIN_STAKE, OUTCOME_SEED, QUESTION_CONFIG_SEED, REPUTATION_SEED, SECONDS_PER_DAY, USDC_PUBKEY,
+    MIN_DISPUTE_BOND, MIN_STAKE, OUTCOME_SEED, QUESTION_CONFIG_SEED, REPUTATION_SEED,
+    SECONDS_PER_DAY, USDC_PUBKEY,
 };
 use litesvm::LiteSVM;
 use solana_signer::Signer;
@@ -53,10 +54,10 @@ fn test_happy_path() -> Result<()> {
         "council window should be 86400"
     );
     assert_eq!(cfg.min_bounty, 10, "min bounty should be 10");
-    assert_eq!(cfg.min_stake, MIN_STAKE, "min stake should be 750");
+    assert_eq!(cfg.min_stake, MIN_STAKE, "min stake should be 5");
     assert_eq!(
-        cfg.min_dispute_bond, MIN_STAKE,
-        "min dispute bond should be 750"
+        cfg.min_dispute_bond, MIN_DISPUTE_BOND,
+        "min dispute bond should be 5"
     );
     assert_eq!(cfg.slash_bps, SLASH_BPS, "slash bps should be 5000");
     assert_eq!(
@@ -165,9 +166,9 @@ fn test_happy_path() -> Result<()> {
         QuestionState::Answering,
         "state should be Answering after proposal"
     );
-    assert_eq!(q.total_yes_weight, 750, "total yes weight should be 750");
+    assert_eq!(q.total_yes_weight, MIN_STAKE as u128, "total yes weight should be 5");
     assert_eq!(q.total_no_weight, 0, "total no weight should be 0");
-    assert_eq!(q.total_yes_stake, 750, "total yes stake should be 750");
+    assert_eq!(q.total_yes_stake, MIN_STAKE as u128, "total yes stake should be 5");
     assert_eq!(q.total_no_stake, 0, "total no stake should be 0");
     assert_eq!(q.yes_count, 1, "yes count should be 1");
     assert_eq!(q.no_count, 0, "no count should be 0");
@@ -175,8 +176,8 @@ fn test_happy_path() -> Result<()> {
     let a: Answer = get_account_data(&svm, &answer_pda);
     assert_eq!(a.answerer, proposer.pubkey(), "answerer should be proposer");
     assert!(a.side, "side should be true");
-    assert_eq!(a.stake, MIN_STAKE, "stake should be 750");
-    assert_eq!(a.weight, 750, "weight should be 750 for new account");
+    assert_eq!(a.stake, MIN_STAKE, "stake should be 5");
+    assert_eq!(a.weight, MIN_STAKE as u128, "weight should be 5 for new account");
     assert!(!a.claimed, "should not be claimed yet");
 
     let rep: Reputation = get_account_data(&svm, &proposer_rep_pda);
@@ -190,8 +191,8 @@ fn test_happy_path() -> Result<()> {
 
     assert_eq!(
         token_balance(&svm, &proposer_ata),
-        1_000_000 - 750,
-        "proposer should have 999_250 after stake"
+        1_000_000 - MIN_STAKE as u64,
+        "proposer should have 999_995 after stake"
     );
 
     // ===================== Close Proposer =====================
@@ -218,7 +219,7 @@ fn test_happy_path() -> Result<()> {
         Resolver::Optimistic,
         "should be optimistic resolution"
     );
-    assert_eq!(o.total_yes_weight, 750, "yes weight should be 750");
+    assert_eq!(o.total_yes_weight, MIN_STAKE as u128, "yes weight should be 5");
     assert_eq!(o.total_no_weight, 0, "no weight should be 0");
     assert_eq!(o.answer_count, 1, "1 answer");
     assert_eq!(o.council_yes, 0, "no council votes yet");
@@ -242,7 +243,7 @@ fn test_happy_path() -> Result<()> {
 
     let dc: DisputeConfig = get_account_data(&svm, &dispute_pda);
     assert_eq!(dc.disputer, disputer_pk, "disputer should match");
-    assert_eq!(dc.bond_amount, 750, "bond should be 750");
+    assert_eq!(dc.bond_amount, MIN_DISPUTE_BOND, "bond should be 5");
     assert!(
         !dc.claimed_outcome,
         "claimed_outcome should be false (opposite of outcome)"
@@ -264,10 +265,10 @@ fn test_happy_path() -> Result<()> {
     );
     assert_eq!(
         ct.total_yes_stake,
-        8 * 750,
-        "total yes stake should be 8 * 750 = 6000"
+        (8 * MIN_STAKE) as u128,
+        "total yes stake should be 8 * 5 = 40"
     );
-    assert_eq!(ct.total_no_stake, 750, "total no stake should be 750");
+    assert_eq!(ct.total_no_stake, MIN_STAKE as u128, "total no stake should be 5");
     assert!(ct.finalized.is_none(), "should not be finalized yet");
 
     let q: Question = get_account_data(&svm, &question_pda);
@@ -324,22 +325,22 @@ fn test_happy_path() -> Result<()> {
         "state should be Settled after settle"
     );
 
-    let expected_treasury_cut: u64 = 82;
-    let expected_per_answer_reward: u64 = 615;
-    let expected_council_reward: u64 = 15;
+    let expected_treasury_cut: u64 = 7;
+    let expected_per_answer_reward: u64 = 57;
+    let expected_council_reward: u64 = 1;
     assert_eq!(
         q.per_answer_reward, expected_per_answer_reward,
-        "per_answer_reward should be 615 (answer_pool=615 / 1 answerer)"
+        "per_answer_reward should be 57 (answer_pool=57 / 1 answerer)"
     );
     assert_eq!(
         q.council_reward_per_vote, expected_council_reward,
-        "council_reward_per_vote should be 15 (council_pool=123 / 8 correct voters)"
+        "council_reward_per_vote should be 1 (council_pool=11 / 8 correct voters)"
     );
 
     assert_eq!(
         token_balance(&svm, &treasury_ata),
         pre_treasury + expected_treasury_cut,
-        "treasury should have received treasury_cut = 82"
+        "treasury should have received treasury_cut = 7"
     );
     assert_eq!(
         token_balance(&svm, &pool_ata),
@@ -367,7 +368,7 @@ fn test_happy_path() -> Result<()> {
     assert_eq!(
         token_balance(&svm, &proposer_ata),
         pre_proposer_balance + expected_payout,
-        "proposer should get stake + reward = 1365"
+        "proposer should get stake + reward = 62"
     );
 
     let rep: Reputation = get_account_data(&svm, &proposer_rep_pda);

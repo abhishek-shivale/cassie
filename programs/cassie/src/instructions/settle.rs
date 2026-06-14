@@ -58,14 +58,11 @@ pub struct Settle<'info> {
     pub treasury_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     // present only if the question was disputed. settle marks won/lost here.
-    // NOTE: No seeds/bump constraint here — Anchor would try to deserialize the account
-    // even when it is absent (AccountNotInitialized). We verify the PDA manually in settle().
+    // No seeds/bump constraint here — Anchor would try to deserialize the account
     #[account(mut)]
     pub dispute: Option<Box<Account<'info, DisputeConfig>>>,
 
     // present only when the question was resolved by council. settle reads the
-    // NOTE: No seeds/bump constraint here — same reason as dispute above; Anchor fails with
-    // AccountNotInitialized when the account doesn't exist. PDA verified manually in settle().
     pub council_total: Option<Box<Account<'info, CouncilTotal>>>,
 
     pub callback_program: Option<UncheckedAccount<'info>>,
@@ -317,7 +314,6 @@ impl<'info> Settle<'info> {
         data.push(self.outcome.result as u8);
 
         // SOL-006: remaining accounts forwarded to callback CPI; runtime enforces signer/writable.
-        // First remaining account is callback's payer; signs via question PDA invoke_signed seeds.
         let mut metas: Vec<AccountMeta> = Vec::with_capacity(remaining.len());
         for (i, a) in remaining.iter().enumerate() {
             metas.push(AccountMeta {
@@ -333,9 +329,6 @@ impl<'info> Settle<'info> {
             data,
         };
 
-        // Authority: question creator authorized this callback by setting
-        // callback_program + callback_discriminator at ask_question time (signed).
-        // The question PDA (verified by Anchor seeds constraint) signs the CPI.
         require!(
             target != Pubkey::default(),
             CassieError::CallbackInvocationFailed

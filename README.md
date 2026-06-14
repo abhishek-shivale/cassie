@@ -141,6 +141,14 @@ Deployment
   - surfpool run deployment --env localnet 
 - There is also a TypeScript migration script in migrations/deploy.ts for program deployment and upgrades.
 
+Devnet
+- Cassie
+    ─ metadata: 9UdFewrrdmUKVuqo1K8BaUjcJq6kemTtsyLgaGyoT5fz
+    ─ program: 8XBYSkbwTEonoFRtqaU8PqbwyXaXvzDT1bApyUdRbrwf
+- Callback example
+    ─ metadata: 2BWqpEZSAVsHLZZoyuT87F8b4nzhTLPJTDDLndN45r7w
+    ─ program: DANGHof54KqrvGnipP3Hm8whXXifmaWKQwYYH533jVaq
+
 Contributing
 - Open issues and PRs against this repository. Follow the code style and keep changes small and focused.
 - If you change on-chain program interfaces, update the frontend/ABI and run migration scripts.
