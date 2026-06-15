@@ -78,7 +78,7 @@ Settle    Dispute (bond)
             (if registered)
 ```
 
-**Weighted majority** is determined by reputation-weighted bond support across all proposals. If the leading answer does not hold a clear supermajority, the question escalates to council.
+**Weighted majority** is determined by reputation-weighted support across all proposals. If the leading answer does not hold a clear supermajority, the question escalates to council.
 
 ---
 
