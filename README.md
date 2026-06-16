@@ -1,54 +1,125 @@
-Cassie — Optimistic Oracle for Solana
+# Cassie
 
-Cassie is a permissionless optimistic oracle built for Solana. It enables anyone to ask questions and attach bounties, while answers are provided by bonded reporters. Disputes are resolved either through weighted community voting (using reputation) or escalated to a council when votes are too close.
+**Cassie** is a permissionless optimistic oracle built for Solana. Anyone can post a question with a bounty, anyone can answer by bonding tokens, and disputes are resolved through reputation-weighted voting — escalating to a trusted council only when outcomes are genuinely contested.
 
-Core concepts
-- Question: A user posts a question and attaches a bounty.
-- Answer: Any participant can submit an answer by placing a bond.
-- Dispute: Answers can be disputed by staking bonds; disputed questions enter a dispute resolution flow.
-- Reputation: Votes and proposals are weighted by a reputation score to reduce spam and reward reliable actors.
-- Council: A set of trusted/community members who resolve close or contentious disputes. Council votes are also weighted by reputation.
+[//]: # (> Built with [Anchor]&#40;https://book.anchor-lang.com/&#41; · Deployed on Devnet · Frontend in Next.js)
 
-High-level flow
-1. Anyone asks a question and deposits a bounty.
-2. Anyone can answer by placing the required bond.
-3. Answers can be disputed by staking a bond against them.
-4. If there are no disputes, the market resolves in favor of the party with the highest weighted support.
-5. If results are close (no clear weighted majority), the question is escalated to the council.
-6. Council members (who also stake bonds) vote; when quorum is reached the highest-weighted side wins and the question is settled.
+---
 
-On-chain instructions (brief)
-- `initialize_config`: Create and initialize the global config (timers, fees, council members, treasury).
-- `update_config`: Update selected config fields or freeze the config.
-- `update_council`: Replace a council member (old -> new).
-- `ask`: Post a question with a bounty and callback metadata.
-- `propose`: Submit an answer/proposal for a question by staking a bond.
-- `close_proposers`: Close proposer accounts after resolution.
-- `dispute`: Dispute an answer by staking a bond and claiming an outcome.
-- `council_vote`: Cast a council vote (bonded) during escalation.
-- `finalize_council`: Finalize council voting and compute the result.
-- `settle_question`: Settle the question, distribute rewards/slashes, and call the callback.
-- `claim_reward`: Claim rewards or refunds for participants.
-- `close_question`: Close and clean up question-related accounts.
+## Table of Contents
 
-Callback (external program)
-Cassie's `settle_question` instruction calls an external callback program after settlement via a CPI (cross-program invocation). This lets any external program react to a settled question result.
+- [How It Works](#how-it-works)
+- [Core Concepts](#core-concepts)
+- [Resolution Flow](#resolution-flow)
+- [On-Chain Instructions](#on-chain-instructions)
+- [Callback System](#callback-system)
+- [Repository Structure](#repository-structure)
+- [Getting Started](#getting-started)
+- [Deployment](#deployment)
+- [Devnet Addresses](#devnet-addresses)
+- [Contributing](#contributing)
+- [License](#license)
 
-Callback instruction data layout (8 + 32 + 1 bytes):
-- bytes 0–7:   callback discriminator (u64LE, set at ask_question time)
-- bytes 8–39:  question hash (32 bytes)
-- byte 40:    result (0 = NO won, 1 = YES won)
-- remaining:   any additional accounts forwarded from the settle call
+---
 
-Example callback program
-A minimal callback program is provided under programs/callback_example/. It demonstrates how to receive and decode the callback from Cassie.
+## How It Works
 
-Key parts of the example:
+1. **Ask** — Post a question and deposit a bounty.
+2. **Propose** — Anyone stakes a bond and submits an answer.
+3. **Dispute** — Answers can be challenged by staking a bond against them.
+4. **Resolve** — If no disputes arise, the answer with the highest weighted support wins. If the result is too close, the question escalates to the council.
+5. **Council** — Trusted members stake bonds and vote. When quorum is reached, the winning side is settled and rewards are distributed.
+6. **Callback** — After settlement, an optional CPI fires into any registered external program.
+
+---
+
+## Core Concepts
+
+| Concept | Description |
+|---|---|
+| **Question** | A user-posted query with an attached bounty and optional callback. |
+| **Answer / Proposal** | A bonded response submitted by any participant. |
+| **Dispute** | A challenge to an existing answer, also backed by a bond. |
+| **Reputation** | An on-chain score that weights votes and proposals. Rewards reliable actors; penalizes bad ones. |
+| **Council** | A set of trusted members who resolve close or contentious disputes. Council votes are reputation-weighted and bonded. |
+
+---
+
+## Resolution Flow
+
+```
+Ask (bounty deposited)
+        │
+        ▼
+   Propose (bond)
+        │
+    dispute?
+   ┌────┴────┐
+  No         Yes
+   │         │
+   ▼         ▼
+Settle    Dispute (bond)
+(weighted      │
+ majority)     │ 
+               |
+              YES        
+               │          
+               ▼          
+            Council    
+            Vote       
+            (bonded,    
+            quorum)
+                │
+                ▼
+            Settle
+                │
+                ▼
+            Callback CPI
+            (if registered)
+```
+
+**Weighted majority** is determined by reputation-weighted support across all proposals. If the leading answer does not hold a clear supermajority, the question escalates to council.
+
+---
+
+## On-Chain Instructions
+
+| Instruction | Description |
+|---|---|
+| `initialize_config` | Create and initialize global config — timers, fees, council members, treasury. |
+| `update_config` | Update selected config fields or freeze the config. |
+| `update_council` | Replace a council member (old → new). |
+| `ask` | Post a question with a bounty and optional callback metadata. |
+| `propose` | Submit an answer by staking a bond. |
+| `close_proposers` | Close proposer accounts after resolution. |
+| `dispute` | Dispute an existing answer by staking a bond and claiming an outcome. |
+| `council_vote` | Cast a bonded council vote during escalation. |
+| `finalize_council` | Finalize council voting and compute the result. |
+| `settle_question` | Settle the question, distribute rewards/slashes, and fire the callback. |
+| `claim_reward` | Claim rewards or refunds for individual participants. |
+| `close_question` | Close and clean up all question-related accounts. |
+
+---
+
+## Callback System
+
+After `settle_question` executes, Cassie fires a CPI into any external program registered at `ask` time. This lets downstream apps — prediction markets, insurance protocols, automated settlement vaults — react to a resolved outcome without polling.
+
+### Callback instruction data layout
+
+| Bytes | Field | Type |
+|---|---|---|
+| 0–7 | Callback discriminator | `u64` (LE) |
+| 8–39 | Question hash | `[u8; 32]` |
+| 40 | Result | `u8` (`0` = NO, `1` = YES) |
+| 41+ | Additional accounts | Forwarded from `settle_question` remaining accounts |
+
+### Minimal callback program
 
 ```rust
 // programs/callback_example/src/lib.rs
 
-declare_id!("Ex4Y7eNFXJ5CE6JGCN8m4VY9vVnPPhXJHFP7ZQCqQ5zB");
+declare_id!("");
 
 #[program]
 pub mod callback_example {
@@ -86,75 +157,116 @@ pub struct CallbackData {
 }
 ```
 
-Using the callback in Cassie:
+### Registering a callback
+
 When calling `ask`, provide:
-- `callback_program`: the example program's ID (Ex4Y7eNFXJ5CE6JGCN8m4VY9vVnPPhXJHFP7ZQCqQ5zB)
-- `callback_discriminator`: the 8-byte selector for `handle_cassie_result`
-- `callback_data`: any account the callback program needs (passed as remaining accounts to `settle_question`)
 
-The callback is only invoked if `callback_program` was set to a non-default key when the question was asked.
+- `callback_program` — the target program ID
+- `callback_discriminator` — the 8-byte selector for the instruction to invoke
+- `callback_data` — any accounts the callback program needs (passed as remaining accounts to `settle_question`)
 
-Features
-- Permissionless question posting and answering with economic bonds
-- Reputation-weighted voting to reward reliable participants
-- Dispute resolution with escalation to an on-chain council
-- Anchor/Rust Solana program with a Next.js landing app and runbooks for reproducible deployment
+The callback is **only invoked** if `callback_program` is set to a non-default key at ask time.
 
-Repository structure
-- programs/ — Anchor/Rust on-chain program(s)
-- app/ — Next.js landing site and frontend code
-- migrations/ — scripts for migrations / deployments
-- runbooks/ — surfpool runbooks for deployment and localnet automation
-- Anchor.toml, Cargo.toml — Anchor and Rust workspace configuration
+---
 
-Getting started (development)
-Prerequisites
-- Rust (recommended: use rustup and the toolchain defined in rust-toolchain.toml)
-- Solana CLI (solana)
-- Anchor (anchor-cli)
-- Node.js and Yarn (for the frontend and workspace scripts)
-- Surfpool (optional but recommended for localnet + runbooks)
+## Repository Structure
 
-Quick setup
-1. Install Rust, Solana CLI, Anchor and Yarn. Example:
-   - rustup: https://rustup.rs
-   - Solana: https://docs.solana.com/cli/install-solana-cli-tools
-   - Anchor: https://book.anchor-lang.com/installation.html
-   - Yarn: https://classic.yarnpkg.com/lang/en/docs/install
-2. (Optional) Install Surfpool for a local Surfnet: curl -sL https://run.surfpool.run/ | bash
-3. Start a localnet (Surfpool) or ensure your provider is running:
-   - surfpool start --watch
+```
+cassie/
+├── programs/
+│   ├── cassie/              # Core Anchor/Rust oracle program
+│   └── callback_example/    # Minimal example callback program
+├── app/                     # Next.js landing site and frontend
+├── migrations/              # Deployment and upgrade scripts (TypeScript)
+├── runbooks/                # Surfpool runbooks for reproducible deployments
+├── Anchor.toml              # Anchor workspace config
+└── Cargo.toml               # Rust workspace config
+```
 
-Build & test
-- Build Rust programs: cargo build --workspace --release
-- Run tests: cargo test
-- Anchor tests (if present) will run with the configured provider; Anchor.toml has test = "cargo test"
+---
 
-Frontend
-- Start the Next.js landing app:
-  - yarn app:dev
-  - or: cd app && yarn dev
+## Getting Started
 
-Deployment
-- This repository includes runbooks (runbooks/deployment) to automate deployment with Surfpool. Use Surfpool to run them:
-  - surfpool run 
-  - surfpool run deployment --env localnet 
-- There is also a TypeScript migration script in migrations/deploy.ts for program deployment and upgrades.
+### Prerequisites
 
-Devnet
-- Cassie
-    ─ metadata: 9UdFewrrdmUKVuqo1K8BaUjcJq6kemTtsyLgaGyoT5fz
-    ─ program: 8XBYSkbwTEonoFRtqaU8PqbwyXaXvzDT1bApyUdRbrwf
-- Callback example
-    ─ metadata: 2BWqpEZSAVsHLZZoyuT87F8b4nzhTLPJTDDLndN45r7w
-    ─ program: DANGHof54KqrvGnipP3Hm8whXXifmaWKQwYYH533jVaq
+| Tool | Install |
+|---|---|
+| Rust | [rustup.rs](https://rustup.rs) |
+| Solana CLI | [docs.solana.com](https://docs.solana.com/cli/install-solana-cli-tools) |
+| Anchor CLI | [book.anchor-lang.com](https://book.anchor-lang.com/installation.html) |
+| Node.js + Yarn | [classic.yarnpkg.com](https://classic.yarnpkg.com/lang/en/docs/install) |
+| Surfpool *(optional)* | `curl -sL https://run.surfpool.run/ \| bash` |
 
-Contributing
-- Open issues and PRs against this repository. Follow the code style and keep changes small and focused.
-- If you change on-chain program interfaces, update the frontend/ABI and run migration scripts.
+### Setup
 
-License
-- This project is provided under the terms of the LICENSE file in this repository.
+```bash
+# 1. Clone the repo
+git clone https://github.com/your-org/cassie.git
+cd cassie
 
-Contact
-- For questions or help running the project locally, open an issue or contact the repository maintainers.
+# 2. Install JS dependencies
+yarn install
+
+# 3. Start a local network (Surfpool recommended)
+surfpool start --watch
+```
+
+### Build
+
+```bash
+# Build all Rust programs
+cargo build --workspace --release
+```
+
+### Test
+
+```bash
+# Run the full test suite
+cargo test
+```
+
+### Frontend
+
+```bash
+# Start the Next.js app
+yarn app:dev
+# or
+cd app && yarn dev
+```
+
+---
+
+## Deployment
+
+Cassie uses [Surfpool](https://surfpool.run) runbooks for reproducible deployments. There is also a TypeScript migration script for direct program deployment and upgrades.
+
+```bash
+# Deploy using Surfpool runbooks
+surfpool run
+surfpool run deployment --env localnet
+```
+
+---
+
+## Devnet Addresses
+
+| Program | Address |
+|---|---|
+| **Cassie** | `8XBYSkbwTEonoFRtqaU8PqbwyXaXvzDT1bApyUdRbrwf` |
+| Cassie metadata | `9UdFewrrdmUKVuqo1K8BaUjcJq6kemTtsyLgaGyoT5fz` |
+| **Callback Example** | `DANGHof54KqrvGnipP3Hm8whXXifmaWKQwYYH533jVaq` |
+| Callback metadata | `2BWqpEZSAVsHLZZoyuT87F8b4nzhTLPJTDDLndN45r7w` |
+
+---
+
+## Contributing
+
+- Open issues and PRs against this repository.
+- Keep changes small and focused; one concern per PR.
+- If you modify any on-chain program interfaces, update the corresponding frontend/ABI and run migration scripts before opening a PR.
+
+---
+
+## License
+
+This project is provided under the terms of the [LICENSE](./LICENSE) file in this repository.
