@@ -1,95 +1,61 @@
 "use client";
 
-import * as React from "react";
-import { Wordmark } from "@/components/icons/Logo";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { Logo } from "@/components/ui/Logo";
+import { nav, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { label: "How It Works", href: "#how" },
-  { label: "Reputation", href: "#reputation" },
-  { label: "Council", href: "#council" },
-  { label: "Use Cases", href: "#use-cases" },
-  { label: "Docs", href: "#docs" },
-  { label: "GitHub", href: "#github" },
-];
-
 export function Nav() {
-  const [scrolled, setScrolled] = React.useState(false);
-  const [open, setOpen] = React.useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  React.useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <header
-      className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
-        scrolled ? "frost hairline-b" : "bg-transparent"
-      )}
-    >
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <a href="#" aria-label="Cassie home" className="focus-ring rounded">
-          <Wordmark />
+    <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
+      <nav
+        className={cn(
+          "flex w-full max-w-6xl items-center justify-between rounded-2xl px-4 py-2.5 transition-all duration-500 md:px-5",
+          scrolled
+            ? "glass border-line-strong shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)]"
+            : "border border-transparent"
+        )}
+      >
+        <a href="#top" aria-label="Cassie home">
+          <Logo />
         </a>
 
-        <ul className="hidden items-center gap-7 lg:flex">
-          {links.map((l) => (
-            <li key={l.label}>
-              <a
-                href={l.href}
-                className="focus-ring rounded font-mono text-[12px] tracking-[0.04em] text-parchment-70 transition-colors hover:text-amber"
-              >
-                {l.label}
-              </a>
-            </li>
+        <div className="hidden items-center gap-1 md:flex">
+          {nav.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="rounded-lg px-3.5 py-2 text-sm text-ink-soft/80 transition-colors hover:text-ink"
+            >
+              {item.label}
+            </a>
           ))}
-        </ul>
-
-        <div className="hidden lg:block">
-          <Button size="sm">Post a Question →</Button>
         </div>
 
-        <button
-          className="focus-ring cursor-pointer rounded p-2 lg:hidden"
-          aria-label="Toggle menu"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <div className="space-y-[5px]">
-            <span className={cn("block h-px w-6 bg-parchment transition", open && "translate-y-[6px] rotate-45")} />
-            <span className={cn("block h-px w-6 bg-parchment transition", open && "opacity-0")} />
-            <span className={cn("block h-px w-6 bg-parchment transition", open && "-translate-y-[6px] -rotate-45")} />
-          </div>
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={site.links.docs}
+            className="hidden rounded-lg px-3.5 py-2 text-sm text-ink-soft/80 transition-colors hover:text-ink sm:block"
+          >
+            Docs
+          </a>
+          <a
+            href={site.links.app}
+            className="ring-gradient is-active group relative rounded-lg bg-ink px-4 py-2 text-sm font-medium text-void transition-transform hover:-translate-y-0.5"
+          >
+            Launch app
+          </a>
+        </div>
       </nav>
-
-      {open && (
-        <div className="frost hairline-t lg:hidden">
-          <ul className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
-            {links.map((l) => (
-              <li key={l.label}>
-                <a
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="block py-2 font-mono text-sm text-parchment-70 hover:text-amber"
-                >
-                  {l.label}
-                </a>
-              </li>
-            ))}
-            <li className="pt-2">
-              <Button size="sm" className="w-full">
-                Post a Question →
-              </Button>
-            </li>
-          </ul>
-        </div>
-      )}
     </header>
   );
 }

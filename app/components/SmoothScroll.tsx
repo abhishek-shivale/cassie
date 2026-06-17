@@ -12,7 +12,7 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
         smoothWheel: true,
         wheelMultiplier: 1,
         touchMultiplier: 1.5,
-        anchors: { offset: -72 }, // clear the fixed nav on #hash jumps
+        anchors: { offset: -72 }, 
       }}
     >
       {children}
