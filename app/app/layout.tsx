@@ -1,34 +1,39 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, IBM_Plex_Mono, Syne } from "next/font/google";
+import { Bricolage_Grotesque, Geist, JetBrains_Mono } from "next/font/google";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-display",
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  variable: "--font-bricolage",
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
+const geist = Geist({
   subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
   weight: ["400", "500", "600"],
   display: "swap",
 });
 
-const syne = Syne({
-  variable: "--font-ui",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Cassie° — A truth layer for Solana",
+  title: "Cassie — Permissionless Optimistic Oracle on Solana",
   description:
-    "Cassie is a permissionless optimistic oracle for arbitrary truth claims on Solana. Did it happen? Cassie decides — onchain, without permission, without bridges.",
+    "Cassie is a permissionless optimistic oracle on Solana. Anyone posts a question with a bounty, anyone answers by bonding tokens, and disputes resolve through reputation-weighted voting — escalating to a trusted council only when truth is genuinely contested.",
+  metadataBase: new URL("https://cassie.xyz"),
+  openGraph: {
+    title: "Cassie — Permissionless Optimistic Oracle on Solana",
+    description:
+      "Settled truth, on Solana. Post a question with a bounty, bond an answer, dispute through reputation-weighted voting.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -37,13 +42,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${plexMono.variable} ${syne.variable}`}
+      className={`${bricolage.variable} ${geist.variable} ${mono.variable}`}
       style={{ colorScheme: "dark" }}
     >
       <head>
         <meta name="color-scheme" content="dark only" />
       </head>
-      <body className="min-h-screen bg-void text-parchment antialiased">
+      <body>
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>

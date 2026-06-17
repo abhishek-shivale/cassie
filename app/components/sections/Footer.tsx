@@ -1,52 +1,86 @@
-import { Wordmark } from "@/components/icons/Logo";
+import { Logo } from "@/components/ui/Logo";
+import { nav, site } from "@/lib/site";
 
-const LINKS = ["Docs", "GitHub", "Twitter/X", "Discord", "Audit Report", "Terms"];
+const groups = [
+  {
+    title: "Protocol",
+    links: [
+      { label: "How it works", href: "#flow" },
+      { label: "Mechanics", href: "#mechanics" },
+      { label: "Council", href: "#council" },
+    ],
+  },
+  {
+    title: "Developers",
+    links: [
+      { label: "Documentation", href: site.links.docs },
+      { label: "GitHub", href: site.links.github },
+      { label: "Launch app", href: site.links.app },
+    ],
+  },
+  {
+    title: "Community",
+    links: [
+      { label: "X / Twitter", href: site.links.x },
+      { label: "Discord", href: "#" },
+      { label: "Governance", href: "#" },
+    ],
+  },
+];
 
 export function Footer() {
   return (
-    <footer className="hairline-t mt-10">
-      <div className="mx-auto max-w-6xl px-6 py-14">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Wordmark />
-            <span className="hidden font-mono text-[12px] text-parchment-40 sm:inline">
-              A permissionless truth layer for Solana.
-            </span>
+    <footer className="relative border-t border-line px-6 pb-12 pt-16">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-12 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+          <div>
+            <Logo />
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
+              A permissionless optimistic oracle on Solana. Engineered to be
+              trusted with money.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-elevated/40 px-3 py-1.5 font-mono text-[11px] text-muted">
+              All systems operational
+            </div>
           </div>
-          <p className="font-ui text-[12px] uppercase tracking-[0.16em] text-parchment-40">
-            Built on{" "}
-            <span className="bg-gradient-to-r from-[#9945FF] to-[#14F195] bg-clip-text font-bold text-transparent">
-              Solana
-            </span>
-          </p>
+
+          {groups.map((g) => (
+            <div key={g.title}>
+              <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-faint">
+                {g.title}
+              </h4>
+              <ul className="mt-4 flex flex-col gap-3">
+                {g.links.map((l) => (
+                  <li key={l.label}>
+                    <a
+                      href={l.href}
+                      className="text-sm text-ink-soft/75 transition-colors hover:text-ink"
+                    >
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="hairline-t mt-10 flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <ul className="flex flex-wrap gap-x-6 gap-y-2">
-            {LINKS.map((l) => (
-              <li key={l}>
-                <a
-                  href="#"
-                  className="focus-ring rounded font-mono text-[12px] text-parchment-55 transition-colors hover:text-amber"
-                >
-                  {l}
-                </a>
-              </li>
+        <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-line pt-8 sm:flex-row sm:items-center">
+          <p className="font-mono text-xs text-faint">
+            © {new Date().getFullYear()} {site.name}. Built on Solana.
+          </p>
+          <nav className="flex gap-5">
+            {nav.map((n) => (
+              <a
+                key={n.href}
+                href={n.href}
+                className="font-mono text-xs text-faint transition-colors hover:text-muted"
+              >
+                {n.label}
+              </a>
             ))}
-          </ul>
-          <p className="font-mono text-[11px] text-parchment-40">
-            © {new Date().getFullYear()} Cassie Protocol
-          </p>
+          </nav>
         </div>
-      </div>
-
-      {/* Oversized brand wordmark — bleeds to footer edge. */}
-      <div className="relative w-full select-none overflow-hidden" aria-hidden>
-        <h2 className="font-display whitespace-nowrap text-center font-semibold leading-[0.8] tracking-[0.01em] text-[clamp(5rem,21vw,20rem)] text-transparent [-webkit-text-stroke:1px_var(--color-parchment-15)]">
-          CASSIE<span className="text-amber [-webkit-text-stroke:0]">.</span>
-        </h2>
-        {/* fade base into void */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-void to-transparent" />
       </div>
     </footer>
   );
