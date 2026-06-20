@@ -410,6 +410,10 @@ describe("cassie [devnet]", function () {
             treasury: TREASURY_PK,
             hasDispute: false,
             hasCouncil: false,
+            callbackProgram: CALLBACK_EXAMPLE_PROGRAM_ID,
+            callbackRemainingAccounts: [
+              { pubkey: questionPdaFor(hash), isSigner: false, isWritable: true },
+            ],
           }),
           cranker
         );
