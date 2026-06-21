@@ -2,6 +2,10 @@
 
 **Cassie** is a permissionless optimistic oracle built for Solana. Anyone can post a question with a bounty, anyone can answer by bonding tokens, and disputes are resolved through reputation-weighted voting — escalating to a trusted council only when outcomes are genuinely contested.
 
+### Devnet Test
+
+https://github.com/abhishek-shivale/cassie/raw/main/tests/export.mp4
+
 [//]: # (> Built with [Anchor]&#40;https://book.anchor-lang.com/&#41; · Deployed on Devnet · Frontend in Next.js)
 
 ---
