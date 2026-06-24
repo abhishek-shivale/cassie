@@ -8,7 +8,7 @@
 
 ### Devnet Test
 
-<video src="https://github.com/abhishek-shivale/cassie/raw/main/tests/export.mp4" controls width="100%"></video>
+<video src="https://github.com/abhishek-shivale/cassie/tree/main/tests/export.mp4" controls width="100%"></video>
 
 [//]: # (> Built with [Anchor]&#40;https://book.anchor-lang.com/&#41; · Deployed on Devnet · Frontend in Next.js)
 
