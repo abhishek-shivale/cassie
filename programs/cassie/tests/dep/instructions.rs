@@ -142,7 +142,7 @@ pub fn propose_answer(svm: &mut LiteSVM, proposer: &Keypair, hash: [u8; 32], sid
 
     let accounts = cassie::accounts::Propose {
         proposer: proposer.pubkey(),
-        proposer_ata: add_ata(svm, proposer.pubkey(), 1_000_000),
+        proposer_ata: add_ata(svm, proposer.pubkey(), 10_000_000),
         answer: get_pda(&[
             ANSWER_SEED.as_ref(),
             hash.as_ref(),
@@ -172,7 +172,7 @@ pub fn dispute(svm: &mut LiteSVM, dispute: &Keypair, hash: [u8; 32]) {
         disputer: dispute.pubkey(),
         reputation: get_pda(&[REPUTATION_SEED.as_ref(), dispute.pubkey().as_ref()]),
         disputer_config: get_pda(&[DISPUTE_SEED.as_bytes(), hash.as_ref()]),
-        disputer_ata: add_ata(svm, dispute.pubkey(), 1_000_000),
+        disputer_ata: add_ata(svm, dispute.pubkey(), 10_000_000),
         bond_ata: ata(
             get_pda(&[QUESTION_CONFIG_SEED.as_ref(), hash.as_ref()]),
             USDC_PUBKEY,
@@ -242,7 +242,7 @@ fn vote(svm: &mut LiteSVM, hash: [u8; 32], members: &Keypair, vote: bool) {
         council_total: get_pda(&[COUNCIL_TOTAL_SEED.as_bytes(), hash.as_ref()]),
         usdc_mint: USDC_PUBKEY,
         voter: members.pubkey(),
-        voter_ata: add_ata(svm, members.pubkey(), 1_000_000),
+        voter_ata: add_ata(svm, members.pubkey(), 10_000_000),
         system_program: system_program::id(),
         token_program: TOKEN_PROGRAM_ID,
         associated_token_program: ATA_PROGRAM_ID,

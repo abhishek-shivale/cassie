@@ -124,8 +124,9 @@ const DEADLINE_BUFFER_SEC = 4;
 // rents. Transferred from the admin wallet (devnet airdrop is rate-limited).
 const SUBACCOUNT_SOL = ONE_SOL / 20n; // 0.05 SOL
 
-// USDC (base units, 6 decimals) handed to each sub-account.
-const SUBACCOUNT_USDC = 1_000n;
+// USDC (base units, 6 decimals) handed to each sub-account. Must exceed
+// MIN_STAKE (5 USDC) so a sub-account can bond a proposal/dispute.
+const SUBACCOUNT_USDC = 6_000_000n;
 
 const RUN_SLOW_CLOSE = process.env.RUN_SLOW_CLOSE === "1";
 

@@ -48,8 +48,8 @@ export const COUNCIL_BPS = 1500;
 export const DIVERGENCE_BPS = 3500;
 
 export const MIN_BOUNTY = 10n;
-export const MIN_STAKE = 5n;
-export const MIN_DISPUTE_BOND = 5n;
+export const MIN_STAKE = 5_000_000n;
+export const MIN_DISPUTE_BOND = 5_000_000n;
 export const BPS_DENOMINATOR = 10_000n;
 
 export const SECONDS_PER_DAY = 86_400;

@@ -13,3 +13,8 @@ test-ledger
 .next
 next-env.d.ts
 out
+
+# env — keep .env.example, ignore real keys
+.env
+.env.local
+.env*.local

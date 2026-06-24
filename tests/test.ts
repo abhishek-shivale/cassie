@@ -187,7 +187,7 @@ describe("cassie", () => {
       // Surfpool is a mainnet fork — USDC mint already exists, no mint authority needed.
       // Directly write funded token accounts via surfnet_setAccount.
       await surfnetFundUsdc(creator.publicKey, 100_000n);
-      await surfnetFundUsdc(proposer.publicKey, 100_000n);
+      await surfnetFundUsdc(proposer.publicKey, 10_000_000n);
       poolAta = ataFor(questionPdaFor(hash));
     });
   
@@ -232,13 +232,13 @@ describe("cassie", () => {
       expect(q.state).to.deep.equal({ answering: {} });
       expect(Number(q.yesCount)).to.equal(1);
       expect(Number(q.noCount)).to.equal(0);
-      expect(String(q.totalYesWeight)).to.equal("5");
-      expect(String(q.totalYesStake)).to.equal("5");
+      expect(String(q.totalYesWeight)).to.equal(String(MIN_STAKE));
+      expect(String(q.totalYesStake)).to.equal(String(MIN_STAKE));
   
       const a = await fetchAnswer(hash, proposer.publicKey);
       expect(a.answerer.toBase58()).to.equal(proposer.publicKey.toBase58());
       expect(a.side).to.equal(true);
-      expect(String(a.stake)).to.equal("5");
+      expect(String(a.stake)).to.equal(String(MIN_STAKE));
       expect(a.claimed).to.equal(false);
     });
   
@@ -289,7 +289,7 @@ describe("cassie", () => {
       await sendIx(ix, proposer);
   
       const post = await tokenBalance(ataFor(proposer.publicKey));
-      const expectedPayout = 5n + 65n;
+      const expectedPayout = MIN_STAKE + 65n;
       expect(post - pre).to.equal(expectedPayout);
   
       // answer account closed by claim reward instruction
@@ -329,7 +329,7 @@ describe("cassie", () => {
       await airdrop(cranker.publicKey, 1n);
       // deterministicKeypair(1/2) are reused from the happy path — refund USDC.
       await surfnetFundUsdc(creator.publicKey, 100_000n);
-      await surfnetFundUsdc(proposer.publicKey, 100_000n);
+      await surfnetFundUsdc(proposer.publicKey, 10_000_000n);
 
       const callbackDisc = HANDLE_CASSIE_RESULT_DISCRIMINATOR_BUF;
 

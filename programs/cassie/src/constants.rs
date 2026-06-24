@@ -2,9 +2,9 @@ use anchor_lang::prelude::*;
 
 pub const MAX_COUNCIL_MEMBER: usize = 9;
 
-// v1: dispute bond + min stake fixed at 750 USDC
-pub const MIN_DISPUTE_BOND: u64 = 5;
-pub const MIN_STAKE: u64 = 5;
+// v1: USDC has 6 decimals, so 5 USDC = 5_000_000 base units.
+pub const MIN_DISPUTE_BOND: u64 = 5_000_000;
+pub const MIN_STAKE: u64 = 5_000_000;
 
 pub const TREASURY_BPS: u64 = 5;
 

@@ -191,8 +191,8 @@ fn test_happy_path() -> Result<()> {
 
     assert_eq!(
         token_balance(&svm, &proposer_ata),
-        1_000_000 - MIN_STAKE as u64,
-        "proposer should have 999_995 after stake"
+        10_000_000 - MIN_STAKE as u64,
+        "proposer should have 5_000_000 after stake"
     );
 
     // ===================== Close Proposer =====================
@@ -325,22 +325,24 @@ fn test_happy_path() -> Result<()> {
         "state should be Settled after settle"
     );
 
-    let expected_treasury_cut: u64 = 7;
-    let expected_per_answer_reward: u64 = 57;
-    let expected_council_reward: u64 = 1;
+    // gross = bounty(70) + council_slash(MIN_STAKE) ≈ 5_000_070
+    // treasury 10% = 500_007, council 15% = 750_008 (/8 = 93_751), answer pool = rest
+    let expected_treasury_cut: u64 = 500_007;
+    let expected_per_answer_reward: u64 = 3_750_053;
+    let expected_council_reward: u64 = 93_751;
     assert_eq!(
         q.per_answer_reward, expected_per_answer_reward,
-        "per_answer_reward should be 57 (answer_pool=57 / 1 answerer)"
+        "per_answer_reward should be answer_pool / 1 answerer"
     );
     assert_eq!(
         q.council_reward_per_vote, expected_council_reward,
-        "council_reward_per_vote should be 1 (council_pool=11 / 8 correct voters)"
+        "council_reward_per_vote should be council_pool / 8 correct voters"
     );
 
     assert_eq!(
         token_balance(&svm, &treasury_ata),
         pre_treasury + expected_treasury_cut,
-        "treasury should have received treasury_cut = 7"
+        "treasury should have received treasury_cut"
     );
     assert_eq!(
         token_balance(&svm, &pool_ata),
@@ -368,7 +370,7 @@ fn test_happy_path() -> Result<()> {
     assert_eq!(
         token_balance(&svm, &proposer_ata),
         pre_proposer_balance + expected_payout,
-        "proposer should get stake + reward = 62"
+        "proposer should get stake + reward"
     );
 
     let rep: Reputation = get_account_data(&svm, &proposer_rep_pda);
