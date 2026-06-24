@@ -232,7 +232,6 @@ export function bn(n: number | bigint): BN {
 
 export async function timeTravel(seconds: number): Promise<void> {
   const url = getClusterUrl();
-  // Query surfpool's current clock via the Clock sysvar
   const currentClock = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -13,11 +13,9 @@ export const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
   "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
 );
 export const SYSTEM_PROGRAM_ID = new PublicKey("11111111111111111111111111111111");
-// export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
 export const TOKEN_DECIMALS = 6;
 
-// Fixed test accounts for deterministic testing
 export const ASKER = new PublicKey("C4nMqhtwcegrTzRVNra6Us7eYgyTag7QWzij3PH9QsiY");
 export const ASKER_ATA = new PublicKey("BUc8ghemRNA5y24ciN1mm9mTrr8ceDYtrxSrizW2XeAm");
 

@@ -155,11 +155,6 @@ export function bnReplacer(_k: string, v: any): any {
   return v;
 }
 
-/**
- * Surfpool (mainnet fork) helper: funds a token account via surfnet_setTokenAccount.
- * Takes the owner pubkey directly — Surfpool derives and creates the ATA internally.
- * Use this instead of ensureUsdcMint + fundOwnerWithUsdc on Surfpool.
- */
 export async function surfnetFundUsdc(
   owner: PublicKey,
   amount: bigint,

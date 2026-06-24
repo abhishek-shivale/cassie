@@ -96,8 +96,6 @@ describe("cassie", () => {
 
   describe("initialize_config", () => {
     it("initializes the oracle config", async () => {
-      // Surfpool is persistent — the PDA may already exist from a previous run.
-      // If so, reset the mutable fields back to defaults instead of re-initialising.
       await surfnetFundUsdc(admin.publicKey, 10000n)
       await surfnetFundUsdc(treasury.publicKey, 10000n)
       const configExists = await accountExists(adminConfigPda());
@@ -152,12 +150,12 @@ describe("cassie", () => {
         new: newMember.publicKey,
       });
       await sendIx(ix);
-  
+
       const cfg2 = await fetchOracleConfig();
       expect(cfg2.council[0].toBase58()).to.equal(newMember.publicKey.toBase58());
       expect(cfg2.council[1].toBase58()).to.equal(cfg.council[1].toBase58());
     });
-  
+
     it("updates default_dispute_window", async () => {
       const ix = buildUpdateConfig({
         admin: admin.publicKey,
@@ -167,7 +165,7 @@ describe("cassie", () => {
         freeze: null,
       });
       await sendIx(ix);
-  
+
       const cfg = await fetchOracleConfig();
       expect(Number(cfg.defaultDisputeWindow)).to.equal(7500);
     });
@@ -179,18 +177,16 @@ describe("cassie", () => {
     const proposer = newKeypair();
     const cranker = newKeypair();
     let poolAta: PublicKey;
-  
+
     before(async () => {
       await airdrop(creator.publicKey, 1n);
       await airdrop(proposer.publicKey, 1n);
       await airdrop(cranker.publicKey, 1n);
-      // Surfpool is a mainnet fork — USDC mint already exists, no mint authority needed.
-      // Directly write funded token accounts via surfnet_setAccount.
       await surfnetFundUsdc(creator.publicKey, 100_000n);
       await surfnetFundUsdc(proposer.publicKey, 10_000_000n);
       poolAta = ataFor(questionPdaFor(hash));
     });
-  
+
     it("asks a question with a YES-side bounty", async () => {
       const ix = buildAsk({
         questioner: creator.publicKey,
@@ -200,7 +196,7 @@ describe("cassie", () => {
         callbackProgram: PublicKey.default,
       });
       await sendIx(ix, creator);
-  
+
       const q = await fetchQuestion(hash);
       expect(q.creator.toBase58()).to.equal(creator.publicKey.toBase58());
       expect(q.bounty.toString()).to.equal("70");
@@ -214,11 +210,11 @@ describe("cassie", () => {
       );
       expect(Number(q.perAnswerReward)).to.equal(0);
       expect(Number(q.councilRewardPerVote)).to.equal(0);
-  
+
       const bountyAtaBalance = await tokenBalance(poolAta);
       expect(bountyAtaBalance).to.equal(70n);
     });
-  
+
     it("submits a YES proposal", async () => {
       const ix = buildPropose({
         proposer: proposer.publicKey,
@@ -227,42 +223,42 @@ describe("cassie", () => {
         stake: MIN_STAKE,
       });
       await sendIx(ix, proposer);
-  
+
       const q = await fetchQuestion(hash);
       expect(q.state).to.deep.equal({ answering: {} });
       expect(Number(q.yesCount)).to.equal(1);
       expect(Number(q.noCount)).to.equal(0);
       expect(String(q.totalYesWeight)).to.equal(String(MIN_STAKE));
       expect(String(q.totalYesStake)).to.equal(String(MIN_STAKE));
-  
+
       const a = await fetchAnswer(hash, proposer.publicKey);
       expect(a.answerer.toBase58()).to.equal(proposer.publicKey.toBase58());
       expect(a.side).to.equal(true);
       expect(String(a.stake)).to.equal(String(MIN_STAKE));
       expect(a.claimed).to.equal(false);
     });
-  
+
     it("closes proposers after the answer window (optimistic resolve)", async () => {
       await timeTravel(3605);
-  
+
       const ix = buildCloseProposers({
         cranker: cranker.publicKey,
         hash,
       });
       await sendIx(ix, cranker);
-  
+
       const q = await fetchQuestion(hash);
       expect(q.state).to.deep.equal({ resolved: {} });
-  
+
       const o = await fetchOutcome(hash);
       expect(o.result).to.equal(true);
       expect(o.resolver).to.deep.equal({ optimistic: {} });
       expect(Number(o.answerCount)).to.equal(1);
     });
-  
+
     it("settles the question after the dispute window", async () => {
       await timeTravel(10202);
-  
+
       const ix = buildSettleQuestion({
         cranker: cranker.publicKey,
         hash,
@@ -271,12 +267,12 @@ describe("cassie", () => {
         hasCouncil: false,
       });
       await sendIx(ix, cranker);
-  
+
       const q = await fetchQuestion(hash);
       expect(q.state).to.deep.equal({ settled: {} });
       expect(Number(q.perAnswerReward)).to.equal(65);
     });
-  
+
     it("winning proposer claims the reward", async () => {
       const pre = await tokenBalance(ataFor(proposer.publicKey));
 
@@ -287,21 +283,20 @@ describe("cassie", () => {
         isCouncilVoter: false,
       });
       await sendIx(ix, proposer);
-  
+
       const post = await tokenBalance(ataFor(proposer.publicKey));
       const expectedPayout = MIN_STAKE + 65n;
       expect(post - pre).to.equal(expectedPayout);
-  
-      // answer account closed by claim reward instruction
+
       expect(await accountExists(answerPdaFor(hash, proposer.publicKey))).to.equal(false);
-  
+
       const rep = await fetchReputation(proposer.publicKey);
       expect(Number(rep.score)).to.equal(10);
       expect(Number(rep.answered)).to.equal(1);
       expect(Number(rep.correct)).to.equal(1);
       expect(Number(rep.timesSlashed)).to.equal(0);
     });
-  
+
     it("closes the question after the close grace period", async () => {
       await timeTravel(86402);
 
@@ -312,12 +307,12 @@ describe("cassie", () => {
         treasury: TREASURY_PK,
       });
       await sendIx(ix, cranker);
-  
+
       expect(await accountExists(questionPdaFor(hash))).to.equal(false);
       expect(await accountExists(poolAta)).to.equal(false);
     });
   });
-  
+
   describe("callback (callback_example program receives cassie settle result)", () => {
     it("fires the callback to the callback_example program on settle", async () => {
       const hash = new Uint8Array(crypto.randomBytes(32));
@@ -327,7 +322,6 @@ describe("cassie", () => {
       await airdrop(creator.publicKey, 1n);
       await airdrop(proposer.publicKey, 1n);
       await airdrop(cranker.publicKey, 1n);
-      // deterministicKeypair(1/2) are reused from the happy path — refund USDC.
       await surfnetFundUsdc(creator.publicKey, 100_000n);
       await surfnetFundUsdc(proposer.publicKey, 10_000_000n);
 
@@ -371,7 +365,7 @@ describe("cassie", () => {
         ],
       });
       await sendIx(settleIx, cranker);
-  
+
       const q = await fetchQuestion(hash);
       expect(q.callbackProgram.toBase58()).to.equal(CALLBACK_EXAMPLE_PROGRAM_ID.toBase58());
       expect(q.state).to.deep.equal({ settled: {} });
